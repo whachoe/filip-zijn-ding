@@ -22,22 +22,22 @@
   tabs.forEach((tab, idx)=>{
     tab.addEventListener('click', ()=> activateTab(tab));
 
-    tab.addEventListener('keydown', (e)=>{
-      const key = e.key;
-      let newIdx = null;
-      if(key === 'ArrowRight' || key === 'ArrowDown') newIdx = (idx + 1) % tabs.length;
-      if(key === 'ArrowLeft' || key === 'ArrowUp') newIdx = (idx - 1 + tabs.length) % tabs.length;
-      if(key === 'Home') newIdx = 0;
-      if(key === 'End') newIdx = tabs.length -1;
-      if(newIdx !== null){
-        e.preventDefault();
-        activateTab(tabs[newIdx]);
-      }
-      if(key === 'Enter' || key === ' '){
-        e.preventDefault();
-        activateTab(tab);
-      }
-    });
+    // tab.addEventListener('keydown', (e)=>{
+    //   const key = e.key;
+    //   let newIdx = null;
+    //   if(key === 'ArrowRight' || key === 'ArrowDown') newIdx = (idx + 1) % tabs.length;
+    //   if(key === 'ArrowLeft' || key === 'ArrowUp') newIdx = (idx - 1 + tabs.length) % tabs.length;
+    //   if(key === 'Home') newIdx = 0;
+    //   if(key === 'End') newIdx = tabs.length -1;
+    //   if(newIdx !== null){
+    //     e.preventDefault();
+    //     activateTab(tabs[newIdx]);
+    //   }
+    //   if(key === 'Enter' || key === ' '){
+    //     e.preventDefault();
+    //     activateTab(tab);
+    //   }
+    // });
 
     document.getElementById('button-assessment').addEventListener('click', () => document.getElementById('tab-assessment').click());
   });

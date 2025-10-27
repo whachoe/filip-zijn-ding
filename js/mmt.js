@@ -2,10 +2,10 @@
     const categories = [
         'Category 1: Governance, Regulation, and Market Management',
         'Category 2: Infrastructure and Facilities',
-        // 'Category 3: Biosecurity and Hygiene Practices',
-        // 'Category 4: Zoonotic Risk Factors',
-        // 'Category 5: Surveillance and Reporting',
-        // 'Category 6: Risk Communication and Awareness',
+        'Category 3: Biosecurity and Hygiene Practices',
+        'Category 4: Zoonotic Risk Factors',
+        'Category 5: Surveillance and Reporting',
+        'Category 6: Risk Communication and Awareness',
         // 'Category 7: Market Connectivity and Trade Dynamics',
         // 'Category 8: Emergency Preparedness and Risk Mitigation',
         // 'Category 9: Stakeholder Engagement'
@@ -128,6 +128,215 @@
         }
     ];  
 
+    indicators[2] = [
+        {
+            name: 'Movement control for animals, personnel, vehicles',
+            scores: [
+                'No movement control; animals/people/vehicles move freely',
+                'Some control but inconsistent; minimal checks',
+                'Movement controls in place, implemented most of the time',
+                'Strict movement controls for animals/people/vehicles, entry/exit protocols followed, records kept'
+            ]
+        },
+        {
+            name: 'Routine cleaning and disinfection schedules',
+            scores: [
+                'No schedule; cleaning/disinfection ad hoc or rare',
+                'Schedule exists but poorly implemented or monitored',
+                'Schedule exists, implemented largely but occasional lapses',
+                'Regular cleaning & disinfection schedule strictly followed, monitored, documented, corrective action taken'
+            ]
+        },
+        {
+            name: 'Use & accessibility of PPE (gloves, masks, aprons) by vendors/workers',
+            scores: [
+                'PPE rarely available or used',
+                'PPE available but usage inconsistent; training limited',
+                'PPE available, most workers use routinely though some exceptions',
+                'PPE adequately supplied, used correctly by all staff/vendors, training and compliance monitoring in place'
+            ]
+        },
+        {
+            name: 'Procedures for managing sick or dead animals',
+            scores: [
+                'Sick/dead animals handled openly or disposed unsafely',
+                'Some procedures exist but not always followed',
+                'Procedures exist, most staff aware and follow though some gaps',
+                'Clear procedures exist, staff trained, rapid removal of sick/dead animals, disposal safe and documented'
+            ]
+        },
+        {
+            name: 'Cleaning of transport containers and holding pens',
+            scores: [
+                'Containers/pens cleaned infrequently or not at all',
+                'Some cleaning but irregular or inadequate',
+                'Cleaning of containers/pens mostly consistent though some minor gaps',
+                'Containers/pens cleaned and disinfected after each use, records kept, standardised protocols followed'
+            ]
+        },
+        {
+            name: 'Frequency of hand hygiene among workers/vendors',
+            scores: [
+                'Hand hygiene rarely observed; facilities lacking',
+                'Some hand hygiene but inconsistent; training limited',
+                'Hand hygiene regularly practiced though may lapse at busy times',
+                'Hand hygiene routine, observed compliance high, facilities and training ensure consistent practice'
+            ]
+        },
+    ];
+
+    indicators[3] = [
+        {
+            name: 'Presence of high‐risk species and level of species mixing',
+            scores: [
+                'High‐risk species (e.g., wild birds, swine) present; frequent cross‐species mixing',
+                'Some high‐risk species/ mixing present but partially controlled',
+                'High‐risk species present but mixing limited; controls in place',
+                'High‐risk species minimal or well segregated; strict species segregation enforced'
+            ]
+        },
+        {
+            name: 'Duration animals held before sale/slaughter',
+            scores: [
+                'Animals held for long periods (> customised threshold) increasing risk',
+                'Animals held moderately long; some efforts to reduce stay time',
+                'Holding times within acceptable limits most of the time',
+                'Very short holding times, rapid turnover, minimal time for pathogen amplification'
+            ]
+        },
+        {
+            name: 'Slaughtering practices within the market premises',
+            scores: [
+                'On‐site slaughter common, in open area, no dedicated facility',
+                'On‐site slaughter present but some controls exist',
+                'Slaughtering mostly in dedicated zones with controls though occasional breaches',
+                'Slaughtering fully managed in dedicated facility with hygienic conditions, minimal public access, ventilation and waste controls'
+            ]
+        },
+        {
+            name: 'Proximity to wetlands/wildlife habitats',
+            scores: [
+                'Market adjacent to wildlife/ wetlands; frequent contact/exposure',
+                'Some proximity but partial separation; occasional wildlife contact',
+                'Wildlife contact rare; some buffer zones exist though gaps',
+                'Clear buffer zones, minimal wildlife interaction, facility located away from high‐risk habitats'
+            ]
+        },
+        {
+            name: 'Signs of environmental contamination (blood, feathers, faeces) visible',
+            scores: [
+                'Frequent visible contamination; no effective cleaning/controls',
+                'Some contamination visible though efforts underway',
+                'Rare contamination visible; cleaning and monitoring occurs',
+                'No visible contamination, monitoring shows low environmental pathogen load, effective controls in place'
+            ]
+        },
+    ];
+
+    indicators[4] = [
+        {
+            name: 'Participation in active or passive disease surveillance',
+            scores: [
+                'No market involvement in surveillance',
+                'Market occasionally participates or reports but unsystematic',
+                'Market regularly participates in surveillance albeit with some limitations',
+                'Market fully integrated in surveillance (active & passive), routine data flow to authorities'
+            ]
+        },
+        {
+            name: 'Submission of animal or environmental samples for lab testing',
+            scores: [
+                'No sample submission or very rare',
+                'Occasional sample submission but limited species/ frequency',
+                'Samples submitted regularly for priority species/ environments though some gaps',
+                'Comprehensive sample submission (animals + environment) at defined intervals, results linked to actions'
+            ]
+        },
+        {
+            name: 'Presence of disease detection / case reporting mechanisms',
+            scores: [
+                'No reporting mechanism; staff unaware',
+                'Some mechanism exists but usage low or delayed',
+                'Reporting mechanism working, most staff aware, reports submitted but maybe delays',
+                'Well‑defined, functional reporting mechanism, timely, with feedback to market, integrated with lab/field network'
+            ]
+        },
+        {
+            name: 'Use of digital or manual early‑warning / data‑systems',
+            scores: [
+                'No early‑warning system or data capture',
+                'Basic manual system exists but incomplete or not timely',
+                'Digital/manual early‑warning used regularly but may not cover all risks',
+                'Robust early‑warning system (digital/manual), linkage to veterinary/public health, timely alerts and responses'
+            ]
+        },
+        {
+            name: 'Coordination with animal and public‑health authorities',
+            scores: [
+                'Little to no coordination; market alone',
+                'Coordination ad hoc; some contact between market & authorities',
+                'Coordination formalised; regular meetings though may lack full integration',
+                'High level coordination between market, veterinary, public health, One Health framework, regular joint exercises/reviews'
+            ]
+        },
+        {
+            name: 'History of zoonotic/pathogen detection in the market',
+            scores: [
+                'No history or unknown; if positive never followed up',
+                'Some detection but follow‑up weak',
+                'Detections occur; follow‑up action usually implemented',
+                'Regular monitoring reveals no positive/detected minimal; if detection occurs, prompt response, plus records used for improvement'
+            ]
+        },
+    ];
+
+    indicators[5] = [
+        {
+            name: 'Availability of signage/IEC materials on hygiene and disease prevention',
+            scores: [
+                'None or very poor materials, not visible',
+                'Some materials present but outdated or poorly located',
+                'Good quality materials present and visible though may not reach all users',
+                'Up‑to‑date, culturally appropriate signage/IEC present throughout market, regularly reviewed and accessible'
+            ]
+        },
+        {
+            name: 'Training history of vendors/workers on zoonoses, biosecurity etc.',
+            scores: [
+                'No training or very infrequent',
+                'Occasional training but coverage limited or unmonitored',
+                'Training regularly conducted though might not cover all staff/new entrants',
+                'Training comprehensive (initial + refresher), full coverage of vendors/ staff, records available, impact assessed'
+            ]
+        },
+        {
+            name: 'Results from KAP (Knowledge, Attitudes, Practices) assessments',
+            scores: [
+                'No KAP data; knowledge/ practices poor',
+                'KAP done but irregular; results weakly used',
+                'KAP undertaken periodically; results used to inform practice though gaps remain',
+                'Regular KAP assessments, results improve over time, practices show measurable improvement'
+            ]
+        },
+        {
+            name: 'Use of culturally appropriate risk messaging',
+            scores: [
+                'Messaging standard/ generic, low relevance to users',
+                'Some tailored messaging but coverage limited',
+                'Good culturally‑relevant messaging used though may not reach all target groups',
+                'Messaging fully tailored to local culture/language/ gender/ groups, strong uptake and behavioural change evident'
+            ]
+        },
+        {
+            name: 'Channels for communication with communities during outbreaks',
+            scores: [
+                'No dedicated channels or communication plan',
+                'Some channels exist but not used or not effective',
+                'Channels in place and used during outbreaks though may lack full reach',
+                'Robust communication channels (vendors, community, authorities), tested in drills, messaging timely and effective'
+            ]
+        }
+    ];
 
     // Generate the Assessment Form
     document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
@@ -164,7 +373,7 @@
         </div>
 `*/
         let html = `
-        <form id="assessment-form">
+        <form id="assessment-form" onsubmit="save_assessment(); return false;">
           <div id="my-slider" class="slider" aria-roledescription="carousel">
             <div class="slides" role="list">`;
 
@@ -179,23 +388,64 @@
             indicators[catIdx].forEach((indicator, indIdx) => {
                 html += `<span class="indicator-label">${indicator.name}</span>`;
                 indicator.scores.forEach((score, scoreIdx) => {
-                    html += `<input type="radio" class="indicator-value" name="indicator-${catIdx}-${indIdx}" value="${scoreIdx + 1}">${score}</input><br/>`;
+                    html += `<input type="radio" id="indicator-${catIdx}-${indIdx}-${scoreIdx}" class="indicator-value" name="indicator[${catIdx}][${indIdx}]" value="${scoreIdx + 1}" required /><label for="indicator-${catIdx}-${indIdx}-${scoreIdx}">${score}</label><br/>`;
                 });
             });
 
+            let save_button = catIdx === categories.length - 1 ? `<input type="submit" class="save-btn" value="Save"></input>` : '';
             html += `      
-            </fieldset></div>`;
+                ${save_button}
+                </fieldset></div>`;
             
         });
 
+        
         html += ` 
           </div>               
             <button class="nav prev" aria-abel="Previous page">&larr;</button>
             <button class="nav next" aria-label="Next page">&rarr;</button>
 
             <div class="dots" aria-hidden="false"></div>
+            
           </form></div>`;
 
         return html;
     }
 })();
+
+function save_assessment() {
+
+        // Fetch the scores
+        const assesmentForm = document.getElementById('assessment-form');
+        const formData = new FormData(assesmentForm);
+        const scores = Object.fromEntries(formData.entries());
+        
+        // Fetch contact info from settings-screen
+        const contactForm = document.getElementById('settings-form');
+        const contactData = new FormData(contactForm);
+        const contactInfo = {
+            fullname: contactData.get('full-name'),
+            email: contactData.get('email-address'),
+            location: contactData.get('location')
+        };
+        
+        // Prepare assessment data object
+        const curDate = new Date().toISOString();
+        const assessmentData = {
+            contactInfo: contactInfo,
+            scores: scores,
+            created: curDate
+        }
+
+        // Save assessmentData to server or local storage
+        let assessmentId = 'assessment-' + curDate;
+        localStorage.setItem(assessmentId, assessmentData);
+
+        // Now update the assessment list
+        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        console.log(assessmentList);
+        if (!assessmentList) assessmentList = [];
+        assessmentList.push(assessmentId);
+        localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+
+    }
