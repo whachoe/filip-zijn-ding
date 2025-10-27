@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MMT</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/slider.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo">MMT Assessments</h1>
+      <nav class="tabs" role="tablist" aria-label="Main">
+        <button role="tab" aria-selected="true" aria-controls="panel-home" id="tab-home" tabindex="0">Home</button>
+        <button role="tab" aria-selected="false" aria-controls="panel-assessment" id="tab-assessment" tabindex="-1" disabled="true">New Assessment</button>
+        <button role="tab" aria-selected="false" aria-controls="panel-reports" id="tab-reports" tabindex="-1">Reports</button>
+        <button role="tab" aria-selected="false" aria-controls="panel-contact" id="tab-contact" tabindex="-1">Contact</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="panel-home" class="tab-panel" role="tabpanel" aria-labelledby="tab-home">
+      <h2>Welcome</h2>
+      <p>Fill in the form below to get started with our MMT Assessments.</p>
+      <form class="assessment-form" action="#" onsubmit="return false;" onchange="return validate_settings();">
+        <!-- <label for="full-name">Full Name</label> -->
+        <input id="full-name" name="full-name" type="text" placeholder="Your full name" required />
+
+        <!-- <label for="email-address">Email Address</label> -->
+        <input id="email-address" name="email-address" type="email" placeholder="Your e-mail address" />
+
+        <!-- <label for="location">Location</label> -->
+        <input id="location" name="location" type="text" placeholder="Your locality" />
+
+        <button id="button-assessment" tabindex="-1" disabled="true" class="hidden">New Assessment</button>
+    </form>
+    </section>
+
+    <section id="panel-assessment" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-assessment" hidden>
+      <div id="new_assessment_wrapper"></div>
+    </section>
+
+    <section id="panel-reports" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-reports" hidden>
+      <p>We need some diagrams</p>
+    </section>
+
+    <section id="panel-contact" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-contact" hidden>
+      <h2>Contact</h2>
+      <form class="contact-form" action="#" onsubmit="return false;">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" placeholder="Your name">
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="you@example.com">
+
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="4" placeholder="A short message"></textarea>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>&copy; <span id="year"></span> Jo Giraerts</small>
+    </div>
+  </footer>
+
+  <script src="js/umbrella.min.js" defer></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/mmt.js" defer></script>
+  <script src="js/slider.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "responsive-4-tab-site",
+  "version": "1.0.0",
+  "description": "Mobile-first responsive static site with 4 accessible tabs",
+  "private": true,
+  "scripts": {
+    "start": "live-server --open=./index.html"
+  },
+  "dependencies": {
+    "live-server": "^1.2.2"
+  }
+}
