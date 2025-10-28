@@ -69,3 +69,9 @@ function validate_settings() {
         u(assessmentButton).addClass('hidden');
     }
 }
+
+function callNTimes(func, num, delay) {
+    if (!num) return;
+    func();
+    setTimeout(function() { callNTimes(func, num - 1, delay); }, delay);
+}

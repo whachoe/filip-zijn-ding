@@ -6,13 +6,12 @@
         'Category 4: Zoonotic Risk Factors',
         'Category 5: Surveillance and Reporting',
         'Category 6: Risk Communication and Awareness',
-        // 'Category 7: Market Connectivity and Trade Dynamics',
-        // 'Category 8: Emergency Preparedness and Risk Mitigation',
-        // 'Category 9: Stakeholder Engagement'
+        'Category 7: Market Connectivity and Trade Dynamics',
+        'Category 8: Emergency Preparedness and Risk Mitigation',
+        'Category 9: Stakeholder Engagement'
     ];
 
     let indicators = [];
-
     indicators[0] = [
         {
             name: 'Oversight by veterinary / public‑health authorities',
@@ -70,7 +69,6 @@
             ]
         }
     ];
-
     indicators[1] = [
         {
             name: 'Physical layout: species/zone segregation, slaughter/retail zones',
@@ -127,7 +125,6 @@
             ]
         }
     ];  
-
     indicators[2] = [
         {
             name: 'Movement control for animals, personnel, vehicles',
@@ -184,7 +181,6 @@
             ]
         },
     ];
-
     indicators[3] = [
         {
             name: 'Presence of high‐risk species and level of species mixing',
@@ -232,7 +228,6 @@
             ]
         },
     ];
-
     indicators[4] = [
         {
             name: 'Participation in active or passive disease surveillance',
@@ -289,7 +284,6 @@
             ]
         },
     ];
-
     indicators[5] = [
         {
             name: 'Availability of signage/IEC materials on hygiene and disease prevention',
@@ -337,41 +331,151 @@
             ]
         }
     ];
+    indicators[6] = [
+        {
+            name: 'Sources & destinations of traded animals (local, regional, cross‑border)',
+            scores: [
+                'Wide informal sources, cross‐border uncontrolled, no traceability',
+                'Sources partly known but many informal; cross‐border trade partially monitored',
+                'Most sources documented, cross‐border trade monitored though informal flows remain',
+                'All sources traceable, cross‐border trade regulated, full documentation of destinations and origins'
+            ]
+        },
+        {
+            name: 'Frequency and scale of trade (daily/seasonal/peak periods)',
+            scores: [
+                'Very high frequency/volume with little control/monitoring',
+                'High volume but some controls; peaks unmanaged',
+                'Trade frequency and volumes are monitored and peaks managed though some risk remains',
+                'Trade volumes well known & monitored; peak periods anticipated & managed with risk mitigation measures'
+            ]
+        },
+        {
+            name: 'Role in value‑chain (collection, wholesale, retail terminal)',
+            scores: [
+                'Market acts as major collection/aggregation hub, high mixing and risk',
+                'Market role is mixed; some segregation of roles but risk remains',
+                'Value‑chain role known, some mitigation for aggregation risk though occasional mixing remains',
+                'Value‑chain role clearly defined, flow managed to minimise risk, aggregation steps controlled & documented'
+            ]
+        },
+        {
+            name: 'Mapping of animal‑movement routes and aggregation points',
+            scores: [
+                'Routes unknown/unregulated; aggregation unmonitored',
+                'Some mapping of main routes but many unmonitored/ informal',
+                'Routes mapped for main flows though smaller flows not fully captured',
+                'Full mapping of movement routes, aggregation points, monitored and managed for disease risk'
+            ]
+        },
+        {
+            name: 'Cross‑border movement or unregulated informal trade links',
+            scores: [
+                'Large informal/unregulated cross‑border trade, high risk',
+                'Some informal trade but controls beginning',
+                'Informal trade reduced/regulated, cross‑border trade mostly monitored though gaps persist',
+                'Informal/unregulated trade minimal, cross‐border trade fully regulated, formalised, traceable'
+            ]
+        }
+    ];
+    indicators[7] = [
+        {
+            name: 'Existence of contingency / outbreak response plans',
+            scores: [
+                'No plan or very limited plan',
+                'Plan exists but untested, limited coverage',
+                'Plan exists, tested occasionally, most stakeholders aware though not all',
+                'Fully documented response plan, tested via drills, stakeholders trained, resources allocated'
+            ]
+        },
+        {
+            name: 'Isolation/quarantine spaces for sick animals',
+            scores: [
+                'No isolation/quarantine facility or poorly defined',
+                'Facility exists but limited capacity or rarely used',
+                'Facility defined and used though may not cover peak capacity',
+                'Adequate isolation/quarantine facility present, used as needed, protocol defined and executed promptly'
+            ]
+        },
+        {
+            name: 'Availability of emergency sanitation supplies (disinfectants, PPE, etc.)',
+            scores: [
+                'Supplies minimal or stockouts frequent',
+                'Supplies available but inventory unstable/ not routinely checked',
+                'Emergency supplies present and checked though may need replenishment',
+                'Fully stocked emergency supplies, inventory system in place, routine checks, ready for outbreak use'
+            ]
+        },
+        {
+            name: 'Past participation in simulation or tabletop exercises',
+            scores: [
+                'No simulations/exercises conducted',
+                'Some tabletop/simulation exercise but limited participants or scope',
+                'Exercises conducted regularly though some stakeholder groups may not be included',
+                'Full-scale simulation and tabletop exercises conducted regularly, all stakeholders included, lessons learned used for improvement'
+            ]
+        },
+        {
+            name: 'Historical closure or restriction events due to outbreaks',
+            scores: [
+                'No record or closures reactive and prolonged',
+                'Some closures but response delayed/management weak',
+                'Outbreak closures/restrictions managed but some delay or suboptimal recovery',
+                'Rapid closure/restriction when required, outbreak response efficient, market re‑opening based on risk criteria and good recovery'
+            ]
+        }
+    ];
+    indicators[8] = [
+        {
+            name: 'Engagement of vendors, traders, transporters in market improvements',
+            scores: [
+                'No engagement of market actors, top‑down only',
+                'Some engagement but participation minimal or token',
+                'Vendors/traders engaged fairly regularly but not fully empowered',
+                'High level engagement with market actors; they actively participate in improvement initiatives and decision‑making'
+            ]
+        },
+        {
+            name: 'Participation in biosecurity or disease‑control programmes',
+            scores: [
+                'Market actors not involved in programmes',
+                'Some actors involved but many excluded',
+                'Majority of actors aware/ involved though some gaps',
+                'All relevant market actors involved in programmes, active participation, sustained commitment'
+            ]
+        },
+        {
+            name: 'Feedback mechanisms for market users to engage with authorities',
+            scores: [
+                'No feedback mechanism or rarely used',
+                'Feedback mechanism exists but not responsive or inclusive',
+                'Feedback mechanism works though some groups not represented',
+                'Robust feedback mechanism in place, inclusive, responsive, authorities act on feedback, results communicated back'
+            ]
+        },
+        {
+            name: 'Inclusion of women, marginalized groups, or smallholders',
+            scores: [
+                'Women/marginalised largely excluded, smallholders uninvolved',
+                'Some inclusion but limited representation or empowerment',
+                'Good inclusion though some gaps in voice or influence',
+                'Strong inclusive governance and engagement of women, marginalised groups, smallholders; equitable participation in decision‑making'
+            ]
+        },
+        {
+            name: 'Existence of vendor associations or cooperatives contributing to safe trade',
+            scores: [
+                'No association/cooperative or inactive',
+                'Association exists but weak or low membership',
+                'Association functional though resource‑limited or coverage partial',
+                'Strong vendor association/cooperative fully functional, supports safe trade, influences policy, monitors compliance'
+            ]
+        }
+    ];
 
-    // Generate the Assessment Form
-    document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
-
-    // Add the Next and Previous buttons to handle navigation
-    u(document.querySelectorAll('.next-btn')).each(btn => btn.addEventListener('click', (e) => {
-        let cat = e.currentTarget.getAttribute('category');
-        console.log(cat);
-        u(document.getElementById('category-${cat}')).addClass('hidden');
-        u(document.getElementById('category-${cat+1}')).removeClass('hidden');
-    }));
-    u(document.querySelectorAll('.prev-btn')).each(btn => btn.addEventListener('click', (e) => {
-        let cat = e.currentTarget.getAttribute('category');
-        
-        u(document.getElementById('category-${cat}')).addClass('hidden');
-        u(document.getElementById('category-${cat-1}')).removeClass('hidden');
-    }));
-
+//////////////////////////////// END OF INDICATOR DATA //////////////////////////////
 
     function generate_assessment_form(categories, indicators) {
-
-        /*
-        `<div id="my-slider" class="slider" aria-roledescription="carousel">
-        `  <div class="slides" role="list">
-                <div class="slide" role="listitem">Page 1 — Intro</div>
-                <div class="slide" role="listitem">Page 2 — Details</div>
-                <div class="slide" role="listitem">Page 3 — More</div>
-            </div>
-
-            <button class="nav prev" aria-abel="Previous page">&larr;</button>
-            <button class="nav next" aria-label="Next page">&rarr;</button>
-
-             <div class="dots" aria-hidden="false"></div>
-        </div>
-`*/
         let html = `
         <form id="assessment-form" onsubmit="save_assessment(); return false;">
           <div id="my-slider" class="slider" aria-roledescription="carousel">
@@ -398,7 +502,6 @@
                 </fieldset></div>`;
             
         });
-
         
         html += ` 
           </div>               
@@ -411,41 +514,158 @@
 
         return html;
     }
+
+    function calculate_percentage(scores, catX) {
+        let scoreCount = indicators[catX].length;
+        let scoreTotal = 0;
+        for (i=0; i < scoreCount; i++) {
+            let label = "indicator["+catX+"]["+i+"]";
+            scoreTotal += scores[label];            
+        }
+        let average = scoreTotal / scoreCount;
+
+        return Math.round(average * 100/scoreCount);
+    }
+    
+    function generateScoretable() {
+        // Fetch the last 3 assessments
+        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        let last3 = assessmentList.slice(1).slice(-3);
+        let currentId = last3.pop();      // newest
+        let previous2Id = last3.pop();    // middle child
+        let previous1Id = last3.pop();    // oldest
+        
+        let current = currentId ? JSON.parse(localStorage.getItem(currentId)) : null;
+        let previous2 = previous2Id ? JSON.parse(localStorage.getItem(previous2Id)) : null;
+        let previous1 = previous1Id ? JSON.parse(localStorage.getItem(previous1Id)) : null;
+
+        let scoretable = [];
+        categories.forEach((cat, catX) => {
+            scoretable[catX] = [];
+            scoretable[catX][0] = cat;
+            scoretable[catX][1] = current ? calculate_percentage(current.scores, catX) : 0;
+            scoretable[catX][2] = previous1 ? calculate_percentage(previous2.scores, catX) : 0;
+            scoretable[catX][3] = previous2 ? calculate_percentage(previous1.scores, catX) : 0;
+        });
+
+        return scoretable;
+    }
+
+    function calculate_warning_level(score) {
+        if (score < 20) {
+            return "warning1";
+        } else if (score < 40) {
+            return "warning2";
+        } else if (score < 60) {
+            return "warning3";
+        } else if (score < 80){
+            return "warning4";
+        } else {
+            return "warning5";
+        }
+    }
+
+//////////////////////////////// GLOBAL INIT ////////////////////////////////
+
+    let scoretable = generateScoretable();
+    // console.log(scoretable);
+
+    scoretable.forEach((row) => {
+        let rowHtml = `
+        <tr>
+            <td>${row[0]}</td>
+            <td align="center"class="${calculate_warning_level(row[1])}">${row[1]}</td>
+            <td align="center" class="${calculate_warning_level(row[2])}">${row[2]}</td>
+            <td align="center" class="${calculate_warning_level(row[3])}">${row[3]}</td>
+        </tr>
+        `;
+
+        u('table#reports-scoretable tbody').append(rowHtml);
+    });
+
+    // Generate the Assessment Form
+    document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
+
+    // Add the Next and Previous buttons to handle navigation
+    u(document.querySelectorAll('.next-btn')).each(btn => btn.addEventListener('click', (e) => {
+        let cat = e.currentTarget.getAttribute('category');
+        u(document.getElementById('category-${cat}')).addClass('hidden');
+        u(document.getElementById('category-${cat+1}')).removeClass('hidden');
+    }));
+    u(document.querySelectorAll('.prev-btn')).each(btn => btn.addEventListener('click', (e) => {
+        let cat = e.currentTarget.getAttribute('category');
+        
+        u(document.getElementById('category-${cat}')).addClass('hidden');
+        u(document.getElementById('category-${cat-1}')).removeClass('hidden');
+    }));
+
+    // Comment this line out if you don't want to create random assessments. only used for testing
+    // callNTimes(function() { create_random_assessment(indicators); }, 5, 100);
 })();
 
 function save_assessment() {
 
-        // Fetch the scores
-        const assesmentForm = document.getElementById('assessment-form');
-        const formData = new FormData(assesmentForm);
-        const scores = Object.fromEntries(formData.entries());
-        
-        // Fetch contact info from settings-screen
-        const contactForm = document.getElementById('settings-form');
-        const contactData = new FormData(contactForm);
-        const contactInfo = {
-            fullname: contactData.get('full-name'),
-            email: contactData.get('email-address'),
-            location: contactData.get('location')
-        };
-        
-        // Prepare assessment data object
-        const curDate = new Date().toISOString();
-        const assessmentData = {
-            contactInfo: contactInfo,
-            scores: scores,
-            created: curDate
-        }
-
-        // Save assessmentData to server or local storage
-        let assessmentId = 'assessment-' + curDate;
-        localStorage.setItem(assessmentId, assessmentData);
-
-        // Now update the assessment list
-        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-        console.log(assessmentList);
-        if (!assessmentList) assessmentList = [];
-        assessmentList.push(assessmentId);
-        localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
-
+    // Fetch the scores
+    const assesmentForm = document.getElementById('assessment-form');
+    const formData = new FormData(assesmentForm);
+    const scores = Object.fromEntries(formData.entries());
+    
+    // Fetch contact info from settings-screen
+    const contactForm = document.getElementById('settings-form');
+    const contactData = new FormData(contactForm);
+    const contactInfo = {
+        fullname: contactData.get('full-name'),
+        email: contactData.get('email-address'),
+        location: contactData.get('location')
+    };
+    
+    // Prepare assessment data object
+    const curDate = new Date().toISOString();
+    const assessmentData = {
+        contactInfo: contactInfo,
+        scores: scores,
+        created: curDate
     }
+
+    // Save assessmentData to server or local storage
+    let assessmentId = 'assessment-' + curDate;
+    localStorage.setItem(assessmentId, JSON.stringify(assessmentData));
+
+    // Now update the assessment list
+    let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+    if (!assessmentList) assessmentList = [];
+    assessmentList.push(assessmentId);
+    localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+
+}
+
+function create_random_assessment(indicators) {
+    const curDate = new Date().toISOString();
+    let assessmentId = 'assessment-' + curDate;
+    let scores = {};
+    indicators.forEach((cat, catX) => {
+        cat.forEach((indicator, indX) => {
+            scoreIdx = "indicator["+catX+"]["+indX+"]";
+            scores[scoreIdx] = Math.floor(Math.random() * indicator.scores.length) + 1;
+        });
+    });
+    
+    let newAssessment = {
+        contactInfo: {
+            fullname: 'John Doe',
+            email: 'jdoe@fake.com',
+            location: 'New York, USA'
+        },
+        scores: scores,
+        created: curDate
+    };
+
+    // Save the assessment to localstorage
+    localStorage.setItem(assessmentId, JSON.stringify(newAssessment));
+
+    // Now update the assessment list
+    let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+    if (!assessmentList) assessmentList = [];
+    assessmentList.push(assessmentId);
+    localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+}

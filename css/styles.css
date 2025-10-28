@@ -6,6 +6,13 @@
   --accent:#79C4C1;
   --title: #F0A135;
   --glass: rgba(255,255,255,0.03);
+
+  --warning1: #cc3300;
+  --warning2: #ff9966;
+  --warning3: #ffcc00;
+  --warning4: #99cc33;
+  --warning5: #339900;
+
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -79,4 +86,39 @@ legend {
     font-weight: 700;
     margin-top: 2%;
     float: right;    
+}
+
+#reports-scoretable {
+  background-color: var(--muted);
+  color: var(--bg);
+}
+
+#reports-scoretable tbody tr:nth-child(odd) {
+  background-color: var(--bg);
+  color: var(--muted);
+}
+
+.warning1 {
+  background-color: var(--warning1);
+  color: var(--bg);
+}
+
+.warning2 {
+  background-color: var(--warning2);
+  color: var(--bg); 
+}
+
+.warning3 {
+  background-color: var(--warning3);
+  color: var(--bg);
+}
+
+.warning4 {
+  background-color: var(--warning4);
+  color: var(--bg);
+}
+
+.warning5 {
+  background-color: var(--warning5);
+  color: var(--bg);
 }
