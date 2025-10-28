@@ -530,7 +530,7 @@
     function generateScoretable() {
         // Fetch the last 3 assessments
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-        let last3 = assessmentList.slice(1).slice(-3);
+        let last3 = assessmentList ? assessmentList.slice(1).slice(-3) : [];
         let currentId = last3.pop();      // newest
         let previous2Id = last3.pop();    // middle child
         let previous1Id = last3.pop();    // oldest
