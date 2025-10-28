@@ -600,7 +600,7 @@
     }));
 
     // Comment this line out if you don't want to create random assessments. only used for testing
-    // callNTimes(function() { create_random_assessment(indicators); }, 5, 100);
+    callNTimes(function() { create_random_assessment(indicators); }, 5, 100);
 })();
 
 function save_assessment() {
