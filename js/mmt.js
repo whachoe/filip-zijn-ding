@@ -565,23 +565,83 @@
         }
     }
 
+    function render_scoretable(scoretable) {
+        scoretable.forEach((row) => {
+            let rowHtml = `
+            <tr>
+                <td>${row[0]}</td>
+                <td align="center"class="${calculate_warning_level(row[1])}">${row[1]}</td>
+                <td align="center" class="${calculate_warning_level(row[2])}">${row[2]}</td>
+                <td align="center" class="${calculate_warning_level(row[3])}">${row[3]}</td>
+            </tr>
+            `;
+
+            u('table#reports-scoretable tbody').append(rowHtml);
+        });
+    }
+
+    function render_radargraph(scoretable) {
+        const data = {
+            labels: categories,
+            datasets: [{
+                label: 'Current',
+                data: scoretable.map(function(value) { return value[1]; }),
+                fill: true,
+                backgroundColor: '#cc3300',
+                borderColor: 'rgb(255, 99, 132)',
+                pointBackgroundColor: 'rgb(255, 99, 132)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(255, 99, 132)'
+            }, {
+                label: 'Previous 1',
+                data: scoretable.map(function(value) { return value[2]; }),
+                fill: true,
+                backgroundColor: '#ff9966',
+                borderColor: 'rgb(54, 162, 235)',
+                pointBackgroundColor: 'rgb(54, 162, 235)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(54, 162, 235)'
+            }, {
+                label: 'Previous 2',
+                data: scoretable.map(function(value) { return value[3]; }),
+                fill: true,
+                backgroundColor: '#ffcc00',
+                borderColor: 'rgb(54, 162, 235)',
+                pointBackgroundColor: 'rgb(54, 162, 235)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(54, 162, 235)'
+            }]
+            };
+
+        const config = {
+            type: 'radar',
+            data: data,
+            options: {
+                elements: {
+                    line: {
+                        borderWidth: 1
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            },
+        };
+
+        const ctx = document.getElementById('radar-graph');
+        const radarChart = new Chart(ctx, config);
+    }
+
 //////////////////////////////// GLOBAL INIT ////////////////////////////////
 
     let scoretable = generateScoretable();
-    // console.log(scoretable);
-
-    scoretable.forEach((row) => {
-        let rowHtml = `
-        <tr>
-            <td>${row[0]}</td>
-            <td align="center"class="${calculate_warning_level(row[1])}">${row[1]}</td>
-            <td align="center" class="${calculate_warning_level(row[2])}">${row[2]}</td>
-            <td align="center" class="${calculate_warning_level(row[3])}">${row[3]}</td>
-        </tr>
-        `;
-
-        u('table#reports-scoretable tbody').append(rowHtml);
-    });
+    render_scoretable(scoretable)
+    render_radargraph(scoretable);
 
     // Generate the Assessment Form
     document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);

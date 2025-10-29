@@ -91,6 +91,7 @@ legend {
 #reports-scoretable {
   background-color: var(--muted);
   color: var(--bg);
+  margin-bottom: 22px;
 }
 
 #reports-scoretable tbody tr:nth-child(odd) {
@@ -121,4 +122,8 @@ legend {
 .warning5 {
   background-color: var(--warning5);
   color: var(--bg);
+}
+
+canvas#radar-graph {
+  /* background: var(--bg); */
 }
