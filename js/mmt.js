@@ -637,11 +637,60 @@
         const radarChart = new Chart(ctx, config);
     }
 
+    function render_bargraph(scoretable) {        
+        const data = {
+            labels: categories,
+            datasets: [{
+                axis: 'y',
+                label: 'Current',
+                data: scoretable.map(function(value) { return value[1]; }),
+                fill: true,
+                backgroundColor: '#cc3300',
+                borderColor: 'rgb(255, 99, 132)',
+                borderWidth: 1
+            },
+            {
+                axis: 'y',
+                label: 'Previous 1',
+                data: scoretable.map(function(value) { return value[2]; }),
+                fill: true,
+                backgroundColor: '#ff9966',
+                borderColor: 'rgb(54, 162, 235)',
+                borderWidth: 1
+            },
+            {
+                axis: 'y',
+                label: 'Previous 2',
+                data: scoretable.map(function(value) { return value[3]; }),
+                fill: true,
+                backgroundColor: '#ffcc00',
+                borderColor: 'rgb(54, 162, 235)',
+                borderWidth: 1
+            }
+        ]};
+
+        const config = {
+            type: 'bar',
+            data,
+            options: {
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                indexAxis: 'y',
+            }};
+
+        const ctx = document.getElementById('bar-graph');
+        const barChart = new Chart(ctx, config);    
+    }
+
 //////////////////////////////// GLOBAL INIT ////////////////////////////////
 
     let scoretable = generateScoretable();
     render_scoretable(scoretable)
     render_radargraph(scoretable);
+    render_bargraph(scoretable);
 
     // Generate the Assessment Form
     document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
