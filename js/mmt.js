@@ -709,7 +709,7 @@
     }));
 
     // Comment this line out if you don't want to create random assessments. only used for testing
-    callNTimes(function() { create_random_assessment(indicators); }, 5, 100);
+    // callNTimes(function() { create_random_assessment(indicators); }, 5, 100);
 })();
 
 function save_assessment() {
@@ -745,6 +745,9 @@ function save_assessment() {
     if (!assessmentList) assessmentList = [];
     assessmentList.push(assessmentId);
     localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+
+    // Now redirect to reports panel
+    u('button#tab-reports').click();
 
 }
 
