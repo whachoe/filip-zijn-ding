@@ -1,4 +1,3 @@
-(function(){
     const categories = [
         'Category 1: Governance, Regulation, and Market Management',
         'Category 2: Infrastructure and Facilities',
@@ -516,26 +515,27 @@
     }
 
     function calculate_percentage(scores, catX) {
-        let scoreCount = indicators[catX].length;
+        let scoreCount = indicators[catX].length; // How many indicators in this category
         let scoreTotal = 0;
+        let maxScore = 4*scoreCount; // Max score per indicator is 4
+
         for (i=0; i < scoreCount; i++) {
             let label = "indicator["+catX+"]["+i+"]";
             scoreTotal += scores[label];            
-        }
-        let average = scoreTotal / scoreCount;
+        }        
 
-        return Math.round(average * 100/scoreCount);
+        return Math.round((scoreTotal * 100)/maxScore);
     }
     
     function generateScoretable() {
         // Fetch the last 3 assessments
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
         let last3 = assessmentList ? assessmentList.slice(1).slice(-3) : [];
-        let currentId = last3.pop();      // newest
+        let currentId   = last3.pop();    // newest
         let previous2Id = last3.pop();    // middle child
         let previous1Id = last3.pop();    // oldest
         
-        let current = currentId ? JSON.parse(localStorage.getItem(currentId)) : null;
+        let current   = currentId ? JSON.parse(localStorage.getItem(currentId)) : null;
         let previous2 = previous2Id ? JSON.parse(localStorage.getItem(previous2Id)) : null;
         let previous1 = previous1Id ? JSON.parse(localStorage.getItem(previous1Id)) : null;
 
@@ -543,7 +543,7 @@
         categories.forEach((cat, catX) => {
             scoretable[catX] = [];
             scoretable[catX][0] = cat;
-            scoretable[catX][1] = current ? calculate_percentage(current.scores, catX) : 0;
+            scoretable[catX][1] = current   ? calculate_percentage(current.scores, catX)   : 0;
             scoretable[catX][2] = previous1 ? calculate_percentage(previous2.scores, catX) : 0;
             scoretable[catX][3] = previous2 ? calculate_percentage(previous1.scores, catX) : 0;
         });
@@ -685,12 +685,128 @@
         const barChart = new Chart(ctx, config);    
     }
 
-//////////////////////////////// GLOBAL INIT ////////////////////////////////
+    function refreshReports() {
+        // Filling up the Reports tab
+        let scoretable = generateScoretable();
 
-    let scoretable = generateScoretable();
-    render_scoretable(scoretable)
-    render_radargraph(scoretable);
-    render_bargraph(scoretable);
+        render_scoretable(scoretable)
+        render_radargraph(scoretable);
+        render_bargraph(scoretable);
+
+    }
+
+    function create_assessment_id(date) {
+        const curDate = date || new Date();
+
+        // Format: Y-m-d
+        return 'assessment-' + curDate.getFullYear() + '-' + (curDate.getMonth()+1) + '-' + curDate.getDate();
+    }
+
+    function save_assessment() {
+
+        // Fetch the scores
+        const assesmentForm = document.getElementById('assessment-form');
+        const formData = new FormData(assesmentForm);
+        const scores = Object.fromEntries(formData.entries());
+        
+        // Fetch contact info from settings-screen
+        const contactForm = document.getElementById('settings-form');
+        const contactData = new FormData(contactForm);
+        const contactInfo = {
+            fullname: contactData.get('full-name'),
+            email: contactData.get('email-address'),
+            location: contactData.get('location')
+        };
+        
+        // Prepare assessment data object
+        const curDate = new Date().toISOString();
+        const assessmentData = {
+            contactInfo: contactInfo,
+            scores: scores,
+            created: curDate
+        }
+
+        // Save assessmentData to server or local storage
+        let assessmentId = create_assessment_id();
+        localStorage.setItem(assessmentId, JSON.stringify(assessmentData));
+
+        // Now update the assessment list
+        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        if (!assessmentList) assessmentList = [];
+        assessmentList.push(assessmentId);
+        localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+
+        // Now redirect to reports panel
+        refreshReports();
+        u('button#tab-reports').trigger('click');
+    }
+
+    function create_random_assessment(indicators) {
+        const curDate = generateRandomDate(new Date(2023, 0, 1), new Date());
+        let assessmentId = create_assessment_id(curDate);
+        let scores = {};
+        indicators.forEach((cat, catX) => {
+            cat.forEach((indicator, indX) => {
+                scoreIdx = "indicator["+catX+"]["+indX+"]";
+                scores[scoreIdx] = Math.floor(Math.random() * indicator.scores.length) + 1;
+            });
+        });
+        
+        let newAssessment = {
+            contactInfo: {
+                fullname: 'John Doe',
+                email: 'jdoe@fake.com',
+                location: 'New York, USA'
+            },
+            scores: scores,
+            created: curDate.toISOString()
+        };
+
+        // Save the assessment to localstorage
+        localStorage.setItem(assessmentId, JSON.stringify(newAssessment));
+
+        // Now update the assessment list
+        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        if (!assessmentList) assessmentList = [];
+        assessmentList.push(assessmentId);
+        localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+    }
+
+    function export_xlsx() {
+        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        if (!assessmentList) assessmentList = [];
+        
+        let exportData = [];
+        let scores = assessment.scores;
+        assessmentList.forEach((assessmentId) => {
+            let assessment = JSON.parse(localStorage.getItem(assessmentId));
+            let metadata = {
+                assessment_id: assessmentId,
+                created: assessment.created,
+                fullname: assessment.contactInfo.fullname,
+                email: assessment.contactInfo.email,
+                location: assessment.contactInfo.location
+            };
+            scores.push(assessment.scores)
+
+            // Create worksheet
+            let ws = XLSX.utils.json_to_sheet(exportData);
+            
+            
+            // Create workbook and add the worksheet
+            let wb = XLSX.utils.book_new();
+        });
+        let ws2 = XLSX.utils.json_to_sheet(scores);
+        XLSX.utils.book_append_sheet(wb, ws, "MMT Assessments");
+        XLSX.utils.book_append_sheet(wb, ws2, "MMT Indicator Scores");
+
+        // Export to file
+        XLSX.writeFile(wb, "mmt_assessments.xlsx");        
+    }
+    /////////////////////////////// GLOBAL INIT ////////////////////////////////
+
+    // Refresh the Reports tab
+    refreshReports();
 
     // Generate the Assessment Form
     document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
@@ -708,76 +824,5 @@
         u(document.getElementById('category-${cat-1}')).removeClass('hidden');
     }));
 
-    // Comment this line out if you don't want to create random assessments. only used for testing
-    // callNTimes(function() { create_random_assessment(indicators); }, 5, 100);
-})();
-
-function save_assessment() {
-
-    // Fetch the scores
-    const assesmentForm = document.getElementById('assessment-form');
-    const formData = new FormData(assesmentForm);
-    const scores = Object.fromEntries(formData.entries());
-    
-    // Fetch contact info from settings-screen
-    const contactForm = document.getElementById('settings-form');
-    const contactData = new FormData(contactForm);
-    const contactInfo = {
-        fullname: contactData.get('full-name'),
-        email: contactData.get('email-address'),
-        location: contactData.get('location')
-    };
-    
-    // Prepare assessment data object
-    const curDate = new Date().toISOString();
-    const assessmentData = {
-        contactInfo: contactInfo,
-        scores: scores,
-        created: curDate
-    }
-
-    // Save assessmentData to server or local storage
-    let assessmentId = 'assessment-' + curDate;
-    localStorage.setItem(assessmentId, JSON.stringify(assessmentData));
-
-    // Now update the assessment list
-    let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-    if (!assessmentList) assessmentList = [];
-    assessmentList.push(assessmentId);
-    localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
-
-    // Now redirect to reports panel
-    u('button#tab-reports').click();
-
-}
-
-function create_random_assessment(indicators) {
-    const curDate = new Date().toISOString();
-    let assessmentId = 'assessment-' + curDate;
-    let scores = {};
-    indicators.forEach((cat, catX) => {
-        cat.forEach((indicator, indX) => {
-            scoreIdx = "indicator["+catX+"]["+indX+"]";
-            scores[scoreIdx] = Math.floor(Math.random() * indicator.scores.length) + 1;
-        });
-    });
-    
-    let newAssessment = {
-        contactInfo: {
-            fullname: 'John Doe',
-            email: 'jdoe@fake.com',
-            location: 'New York, USA'
-        },
-        scores: scores,
-        created: curDate
-    };
-
-    // Save the assessment to localstorage
-    localStorage.setItem(assessmentId, JSON.stringify(newAssessment));
-
-    // Now update the assessment list
-    let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-    if (!assessmentList) assessmentList = [];
-    assessmentList.push(assessmentId);
-    localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
-}
+    // Comment this line out. only used for testing
+    // callNTimes(function() { create_random_assessment(indicators); }, 5, 100);    

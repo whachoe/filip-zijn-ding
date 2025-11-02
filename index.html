@@ -15,7 +15,7 @@
         <button role="tab" aria-selected="true" aria-controls="panel-home" id="tab-home" tabindex="0">Home</button>
         <button role="tab" aria-selected="false" aria-controls="panel-assessment" id="tab-assessment" tabindex="-1" disabled="true">New Assessment</button>
         <button role="tab" aria-selected="false" aria-controls="panel-reports" id="tab-reports" tabindex="-1">Reports</button>
-        <button role="tab" aria-selected="false" aria-controls="panel-contact" id="tab-contact" tabindex="-1">Contact</button>
+        <button role="tab" aria-selected="false" aria-controls="panel-export" id="tab-export" tabindex="-1">Export</button>
       </nav>
     </div>
   </header>
@@ -63,18 +63,12 @@
       </div>
     </section>
 
-    <section id="panel-contact" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-contact" hidden>
-      <h2>Contact</h2>
-      <form class="contact-form" action="#" onsubmit="return false;">
-        <label for="name">Name</label>
-        <input id="name" name="name" type="text" placeholder="Your name">
-
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" placeholder="you@example.com">
-
-        <label for="message">Message</label>
-        <textarea id="message" name="message" rows="4" placeholder="A short message"></textarea>
-      </form>
+    <section id="panel-export" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-export" hidden>
+      <h2>Export data</h2>
+      <div class="export-wrapper">
+        <!-- <button id="export-json-button">Export as JSON</button> -->
+        <button id="export-csv-button">Export as XLSX</button>
+      </div>
     </section>
   </main>
 
@@ -86,6 +80,7 @@
 
   <script src="js/umbrella.min.js" defer></script>
   <script src="js/chart.umd.js" defer></script>
+  <script src="js/xlsx.full.min.js" defer></script>
   <script src="js/slider.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/mmt.js" defer></script>

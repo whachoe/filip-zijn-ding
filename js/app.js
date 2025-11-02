@@ -22,6 +22,7 @@
   tabs.forEach((tab, idx)=>{
     tab.addEventListener('click', ()=> activateTab(tab));
 
+    // Disabled keyboard navigation for now so we can get the slider working properly. slider uses the same keys.
     // tab.addEventListener('keydown', (e)=>{
     //   const key = e.key;
     //   let newIdx = null;
@@ -39,6 +40,7 @@
     //   }
     // });
 
+    // Make the assessment button activate the assessment tab
     document.getElementById('button-assessment').addEventListener('click', () => document.getElementById('tab-assessment').click());
   });
 
@@ -46,8 +48,6 @@
   const y = new Date().getFullYear();
   const yearEl = document.getElementById('year');
   if(yearEl) yearEl.textContent = y;
-
-
 })();
 
 function validate_settings() {
@@ -74,4 +74,11 @@ function callNTimes(func, num, delay) {
     if (!num) return;
     func();
     setTimeout(function() { callNTimes(func, num - 1, delay); }, delay);
+}
+
+function generateRandomDate(from, to) {
+  return new Date(
+    from.getTime() +
+      Math.random() * (to.getTime() - from.getTime()),
+  );
 }
