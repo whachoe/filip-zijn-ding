@@ -52,6 +52,9 @@
       document.getElementById('full-name').value = info.fullName || '';
       document.getElementById('email-address').value = info.email || '';
       document.getElementById('location').value = info.location || '';
+
+      // Check if all 3 fields in the form are filled in and if so: enable the "New Assessment" tab
+      save_settings();
   }
 
   // set current year in footer

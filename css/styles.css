@@ -88,6 +88,23 @@ legend {
     float: right;    
 }
 
+.export-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+}
+
+.mmt-button {
+    background-color: var(--accent);
+    color: #021223;
+    border: none;
+    padding: .6rem .9rem;
+    border-radius: 8px;
+    font-weight: 700;
+    margin-top: 2%;
+    width: 100%;
+}
+
 #reports-scoretable {
   background-color: var(--muted);
   color: var(--bg);
