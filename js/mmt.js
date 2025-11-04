@@ -481,8 +481,7 @@
             <div class="slides" role="list">`;
 
         categories.forEach((category, catIdx) => {
-            console.log(category, catIdx);
-            
+            // console.log(category, catIdx);            
             html += `
             <div class="slide" role="listitem">
             <fieldset id="category-${catIdx}">
@@ -692,7 +691,6 @@
         render_scoretable(scoretable)
         render_radargraph(scoretable);
         render_bargraph(scoretable);
-
     }
 
     function create_assessment_id(date) {
@@ -772,37 +770,84 @@
         localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
     }
 
+    /**
+     * Convert scores object in the form {indicator[cat][ind]: score, ...} to a 2D array with cat and ind dimensions
+     * 
+     */
+    function scores_to_2d_array(scores) {
+        let scoreArray = [];
+        indicators.forEach((cat, catX) => {
+            scoreArray[catX] = [];
+            cat.forEach((indicator, indX) => {
+                let label = "indicator["+catX+"]["+indX+"]";
+                scoreArray[catX][indX] = scores[label];
+            });
+        });
+
+        return scoreArray;
+    }
+
+        function scores_to_array(scores) {
+        let scoreArray = [];
+        indicators.forEach((cat, catX) => {            
+            cat.forEach((indicator, indX) => {
+                let label = "indicator["+catX+"]["+indX+"]";
+                scoreArray.push(scores[label]);
+            });
+        });
+
+        return scoreArray;
+    }
+
+
     function export_xlsx() {
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
         if (!assessmentList) assessmentList = [];
         
-        let exportData = [];
-        let scores = assessment.scores;
+        let scores = [];
+        let exportData = null;
+
         assessmentList.forEach((assessmentId) => {
             let assessment = JSON.parse(localStorage.getItem(assessmentId));
-            let metadata = {
-                assessment_id: assessmentId,
-                created: assessment.created,
-                fullname: assessment.contactInfo.fullname,
-                email: assessment.contactInfo.email,
-                location: assessment.contactInfo.location
-            };
-            scores.push(assessment.scores)
 
-            // Create worksheet
-            let ws = XLSX.utils.json_to_sheet(exportData);
-            
-            
-            // Create workbook and add the worksheet
-            let wb = XLSX.utils.book_new();
+            // Prepare header row for scores sheet
+            if (scores.length === 0) {
+                let headerRow = [];
+                indicators.forEach((cat, catX) => {            
+                    cat.forEach((indicator, indX) => {
+                        let label = indicator.name;;
+                        headerRow.push(label);
+                    });
+                });
+                scores.push(headerRow);
+            }
+
+            if (!exportData) {
+                exportData = JSON.stringify({
+                    assessment_id: assessmentId,
+                    created: assessment.created,
+                    fullname: assessment.contactInfo.fullname,
+                    email: assessment.contactInfo.email,
+                    location: assessment.contactInfo.location
+                });
+            }
+
+            scores.push(scores_to_array(assessment.scores));
         });
-        let ws2 = XLSX.utils.json_to_sheet(scores);
-        XLSX.utils.book_append_sheet(wb, ws, "MMT Assessments");
+
+        console.log(scores);
+
+        // Create workbook and add the worksheets
+        let wb = XLSX.utils.book_new();
+        // let ws = XLSX.utils.json_to_sheet(exportData);
+        let ws2 = XLSX.utils.aoa_to_sheet(scores);
+        // XLSX.utils.book_append_sheet(wb, ws, "MMT Assessments");
         XLSX.utils.book_append_sheet(wb, ws2, "MMT Indicator Scores");
 
         // Export to file
         XLSX.writeFile(wb, "mmt_assessments.xlsx");        
     }
+
     /////////////////////////////// GLOBAL INIT ////////////////////////////////
 
     // Refresh the Reports tab
