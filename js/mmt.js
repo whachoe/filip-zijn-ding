@@ -1,13 +1,13 @@
     const categories = [
         'Category 1: Governance, Regulation, and Market Management',
         'Category 2: Infrastructure and Facilities',
-        'Category 3: Biosecurity and Hygiene Practices',
-        'Category 4: Zoonotic Risk Factors',
-        'Category 5: Surveillance and Reporting',
-        'Category 6: Risk Communication and Awareness',
-        'Category 7: Market Connectivity and Trade Dynamics',
-        'Category 8: Emergency Preparedness and Risk Mitigation',
-        'Category 9: Stakeholder Engagement'
+        // 'Category 3: Biosecurity and Hygiene Practices',
+        // 'Category 4: Zoonotic Risk Factors',
+        // 'Category 5: Surveillance and Reporting',
+        // 'Category 6: Risk Communication and Awareness',
+        // 'Category 7: Market Connectivity and Trade Dynamics',
+        // 'Category 8: Emergency Preparedness and Risk Mitigation',
+        // 'Category 9: Stakeholder Engagement'
     ];
 
     let indicators = [];
@@ -123,7 +123,7 @@
                 'Dedicated holding pens, species segregated, unloading/loading flow well managed, minimize animal stress and mixing'
             ]
         }
-    ];  
+    ];/*  
     indicators[2] = [
         {
             name: 'Movement control for animals, personnel, vehicles',
@@ -471,15 +471,15 @@
             ]
         }
     ];
-
+*/
 //////////////////////////////// END OF INDICATOR DATA //////////////////////////////
 
     function generate_assessment_form(categories, indicators) {
         let html = `
-        <form id="assessment-form" onsubmit="save_assessment(); return false;">
           <div id="my-slider" class="slider" aria-roledescription="carousel">
-            <div class="slides" role="list">`;
-
+            <div class="slides" role="list">
+                <form id="assessment-form" onsubmit="save_assessment(); return false;"></form>`;
+                
         categories.forEach((category, catIdx) => {
             // console.log(category, catIdx);            
             html += `
@@ -494,7 +494,7 @@
                 });
             });
 
-            let save_button = catIdx === categories.length - 1 ? `<input type="submit" class="save-btn" value="Save"></input>` : '';
+            let save_button = (catIdx === categories.length - 1 ? `<input type="submit" class="save-btn" value="Save"></input>` : '');
             html += `      
                 ${save_button}
                 </fieldset></div>`;
@@ -502,13 +502,14 @@
         });
         
         html += ` 
+            </form>
           </div>               
-            <button class="nav prev" aria-abel="Previous page">&larr;</button>
+            <button class="nav prev" aria-label="Previous page">&larr;</button>
             <button class="nav next" aria-label="Next page">&rarr;</button>
 
             <div class="dots" aria-hidden="false"></div>
             
-          </form></div>`;
+          </div>`;
 
         return html;
     }
@@ -701,7 +702,6 @@
     }
 
     function save_assessment() {
-
         // Fetch the scores
         const assesmentForm = document.getElementById('assessment-form');
         const formData = new FormData(assesmentForm);
@@ -735,8 +735,8 @@
         localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
 
         // Now redirect to reports panel
-        refreshReports();
-        u('button#tab-reports').trigger('click');
+        // refreshReports();
+        u('button#tab-reports').trigger('click');        
     }
 
     function create_random_assessment(indicators) {
@@ -802,46 +802,69 @@
 
     function export_xlsx() {
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        let globalContactInfoJSON = localStorage.getItem('contactInfo');
         if (!assessmentList) assessmentList = [];
         
         let scores = [];
-        let exportData = null;
+        let merges = [];
 
         assessmentList.forEach((assessmentId) => {
             let assessment = JSON.parse(localStorage.getItem(assessmentId));
 
             // Prepare header row for scores sheet
             if (scores.length === 0) {
-                let headerRow = [];
-                indicators.forEach((cat, catX) => {            
+                let categoryRow = ['','','',''];
+                let headerRow = ['Date', 'Contact Name', 'Email', 'Location'];
+                let startcol = headerRow.length;
+
+                indicators.forEach((cat, catX) => {                                
+                    // Calculate merges    
+                    endcol = startcol + cat.length - 1;
+                    merges.push({ s: { r:0, c:startcol }, e: { r:0, c:endcol }});
+                    startcol = endcol + 1;
+
                     cat.forEach((indicator, indX) => {
-                        let label = indicator.name;;
+                        // Only add category label for first indicator in that category
+                        if (indX > 0)
+                            categoryRow.push('');
+                        else {
+                            let catLabel = categories[catX];
+                            categoryRow.push(catLabel);
+                        }
+
+                        // Add indicator label to header row
+                        let label = indicator.name;
                         headerRow.push(label);
                     });
                 });
+                scores.push(categoryRow);
                 scores.push(headerRow);
             }
 
-            if (!exportData) {
-                exportData = JSON.stringify({
-                    assessment_id: assessmentId,
-                    created: assessment.created,
-                    fullname: assessment.contactInfo.fullname,
-                    email: assessment.contactInfo.email,
-                    location: assessment.contactInfo.location
-                });
-            }
-
-            scores.push(scores_to_array(assessment.scores));
+            let scoreRow = scores_to_array(assessment.scores);
+            scoreRow.unshift(assessment.created, assessment.contactInfo.fullname, assessment.contactInfo.email, assessment.contactInfo.location);
+            scores.push(scoreRow);
         });
 
         console.log(scores);
 
         // Create workbook and add the worksheets
         let wb = XLSX.utils.book_new();
-        // let ws = XLSX.utils.json_to_sheet(exportData);
+        // let ws = XLSX.utils.json_to_sheet(globalContactInfoJSON);
         let ws2 = XLSX.utils.aoa_to_sheet(scores);
-        // XLSX.utils.book_append_sheet(wb, ws, "MMT Assessments");
+        ws2['!merges'] = merges;
+        merges.forEach((merge) => {
+            console.log(merge); 
+            ws2[merges.s].s = {
+                                type: 'style',
+                                fill: {
+                                    type: 'pattern',
+                                    patternType: 'solid',
+                                    fgColor: { rgb: 'FFFF0000' }, // Red color
+                                },
+                                };
+        });
+        // XLSX.utils.book_append_sheet(wb, ws, "MMT Assessments - Contact Info");
         XLSX.utils.book_append_sheet(wb, ws2, "MMT Indicator Scores");
 
         // Export to file
@@ -857,12 +880,12 @@
     document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
 
     // Add the Next and Previous buttons to handle navigation
-    u(document.querySelectorAll('.next-btn')).each(btn => btn.addEventListener('click', (e) => {
+    u(document.querySelectorAll('.next')).each(btn => btn.addEventListener('click', (e) => {
         let cat = e.currentTarget.getAttribute('category');
         u(document.getElementById('category-${cat}')).addClass('hidden');
         u(document.getElementById('category-${cat+1}')).removeClass('hidden');
     }));
-    u(document.querySelectorAll('.prev-btn')).each(btn => btn.addEventListener('click', (e) => {
+    u(document.querySelectorAll('.prev')).each(btn => btn.addEventListener('click', (e) => {
         let cat = e.currentTarget.getAttribute('category');
         
         u(document.getElementById('category-${cat}')).addClass('hidden');
