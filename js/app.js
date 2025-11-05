@@ -1,3 +1,45 @@
+function save_settings() {
+    // Check if all 3 fields in the form are filled in and if so: enable the "New Assessment" tab
+    const fullName = document.getElementById('full-name').value.trim();
+    const email = document.getElementById('email-address').value.trim();
+    const location = document.getElementById('location').value;
+
+    const assessmentTab = document.getElementById('tab-assessment');
+    const assessmentButton = document.getElementById('button-assessment');
+    assessmentButton.removeAttribute('hidden');
+
+    // Save contact info
+    localStorage.setItem('contactInfo', JSON.stringify({
+        fullName: fullName,
+        email: email,
+        location: location
+    }));
+
+    if(fullName !== '' && email !== '' && location !== '') {
+        assessmentTab.removeAttribute('disabled');
+        u(assessmentButton).removeClass('hidden');
+        assessmentButton.removeAttribute('disabled');
+    } else {
+        assessmentTab.setAttribute('disabled', 'disabled');
+        u(assessmentButton).addClass('hidden');
+    }
+}
+
+function callNTimes(func, num, delay) {
+    if (!num) return;
+    func();
+    setTimeout(function() { callNTimes(func, num - 1, delay); }, delay);
+}
+
+function generateRandomDate(from, to) {
+  return new Date(
+    from.getTime() +
+      Math.random() * (to.getTime() - from.getTime()),
+  );
+}
+
+
+//////////////////// GLOBAL SETUP ////////////////////
 (function(){
   const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
   const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
@@ -42,7 +84,7 @@
   });
 
   // Make the assessment button activate the assessment tab
-    document.getElementById('button-assessment').addEventListener('click', () => document.getElementById('tab-assessment').click());
+  document.getElementById('button-assessment').addEventListener('click', () => document.getElementById('tab-assessment').click());
 
   // Fill in the contact info form if data exists in localStorage
   const contactInfo = localStorage.getItem('contactInfo');
@@ -63,42 +105,3 @@
   if(yearEl) yearEl.textContent = y;
 })();
 
-function save_settings() {
-    // Check if all 3 fields in the form are filled in and if so: enable the "New Assessment" tab
-    const fullName = document.getElementById('full-name').value.trim();
-    const email = document.getElementById('email-address').value.trim();
-    const location = document.getElementById('location').value;
-
-    const assessmentTab = document.getElementById('tab-assessment');
-    const assessmentButton = document.getElementById('button-assessment');
-    assessmentButton.removeAttribute('hidden');
-
-    // Save contact info
-    localStorage.setItem('contactInfo', JSON.stringify({
-        fullName: fullName,
-        email: email,
-        location: location
-    }));
-
-    if(fullName !== '' && email !== '' && location !== '') {
-        assessmentTab.removeAttribute('disabled');
-        u(assessmentButton).removeClass('hidden');
-        assessmentButton.removeAttribute('disabled');
-    } else {
-        assessmentTab.setAttribute('disabled', 'disabled');
-        u(assessmentButton).addClass('hidden');
-    }
-}
-
-function callNTimes(func, num, delay) {
-    if (!num) return;
-    func();
-    setTimeout(function() { callNTimes(func, num - 1, delay); }, delay);
-}
-
-function generateRandomDate(from, to) {
-  return new Date(
-    from.getTime() +
-      Math.random() * (to.getTime() - from.getTime()),
-  );
-}

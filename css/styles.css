@@ -141,10 +141,6 @@ legend {
   color: var(--bg);
 }
 
-canvas#radar-graph {
-  /* background: var(--bg); */
-}
-
 canvas#bar-graph {
   margin-top: 100px;
 }

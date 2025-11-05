@@ -25,15 +25,15 @@
 }
 
 /* visual for slides */
-.slide:nth-child(1){background:linear-gradient(90deg,#082233,#06334a)}
-.slide:nth-child(2){background:linear-gradient(90deg,#163041,#0b3b28)}
-.slide:nth-child(3){background:linear-gradient(90deg,#2a1b3a,#3b1b2b)}
-.slide:nth-child(4){background:linear-gradient(90deg,#163041,#0b3b28)}
-.slide:nth-child(5){background:linear-gradient(90deg,#082233,#06334a)}
-.slide:nth-child(6){background:linear-gradient(90deg,#163041,#0b3b28)}
-.slide:nth-child(7){background:linear-gradient(90deg,#2a1b3a,#3b1b2b)}
-.slide:nth-child(8){background:linear-gradient(90deg,#163041,#0b3b28)}
-.slide:nth-child(9){background:linear-gradient(90deg,#2a1b3a,#3b1b2b)}
+.slide:nth-child(1){background: linear-gradient(90deg, #082233, #06334a)}
+.slide:nth-child(2){background: linear-gradient(90deg, #06334a, #082233)}
+.slide:nth-child(3){background: linear-gradient(90deg, #082233, #06334a)}
+.slide:nth-child(4){background: linear-gradient(90deg, #06334a, #082233)}
+.slide:nth-child(5){background: linear-gradient(90deg, #082233, #06334a)}
+.slide:nth-child(6){background: linear-gradient(90deg, #06334a, #082233)}
+.slide:nth-child(7){background: linear-gradient(90deg, #082233, #06334a)}
+.slide:nth-child(8){background: linear-gradient(90deg, #06334a, #082233)}
+.slide:nth-child(9){background: linear-gradient(90deg, #082233, #06334a)}
 
 /* nav buttons */
 .nav{
