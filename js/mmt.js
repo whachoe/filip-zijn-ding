@@ -476,16 +476,17 @@
 //////////////////////////////// END OF INDICATOR DATA //////////////////////////////
 
     function generate_assessment_form(categories, indicators) {
-        let html = `
-        <form id="assessment-form" onsubmit="save_assessment(); return false;">
-          <div id="my-slider" class="slider" aria-roledescription="carousel">
-            <div class="slides" role="list">`;
+        let html = `        
+          <div id="my-slider" class="swiffy-slider slider-nav-arrow slider-nav-outside-expand slider-item-first-visible slider-nav-noloop slider-item-nogap slider-indicators-round slider-indicators-sm" aria-roledescription="carousel">
+          <form id="assessment-form" onsubmit="save_assessment(); return false;">
+            <ul class="slider-container">`;
 
+        let visible_class = "slide-visible";    
         categories.forEach((category, catIdx) => {
             console.log(category, catIdx);
             
             html += `
-            <div class="slide" role="listitem">
+            <li id="slide-${catIdx+1}" class="${visible_class}">
             <fieldset id="category-${catIdx}">
             <legend>${category}</legend>`;
 
@@ -499,18 +500,28 @@
             let save_button = catIdx === categories.length - 1 ? `<input type="submit" class="save-btn" value="Save"></input>` : '';
             html += `      
                 ${save_button}
-                </fieldset></div>`;
-            
+                </fieldset></li>`;
+            visible_class = "";
         });
         
         html += ` 
-          </div>               
-            <button class="nav prev" aria-abel="Previous page">&larr;</button>
-            <button class="nav next" aria-label="Next page">&rarr;</button>
+          </ul>               
+            <button class="slider-nav" aria-abel="Previous page"></button>
+            <button class="slider-nav slider-nav-next" aria-label="Next page"></button>
 
-            <div class="dots" aria-hidden="false"></div>
-            
-          </form></div>`;
+            <ul class="slider-indicators">
+                <li class="active"></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+                <li></li>
+            </ul>
+          </form>  
+          </div>`;
 
         return html;
     }
