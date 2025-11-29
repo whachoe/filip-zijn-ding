@@ -813,7 +813,7 @@
         return scoreArray;
     }
 
-        function scores_to_array(scores) {
+    function scores_to_array(scores) {
         let scoreArray = [];
         indicators.forEach((cat, catX) => {            
             cat.forEach((indicator, indX) => {
@@ -828,46 +828,69 @@
 
     function export_xlsx() {
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        let globalContactInfoJSON = localStorage.getItem('contactInfo');
         if (!assessmentList) assessmentList = [];
         
         let scores = [];
-        let exportData = null;
+        let merges = [];
 
         assessmentList.forEach((assessmentId) => {
             let assessment = JSON.parse(localStorage.getItem(assessmentId));
 
             // Prepare header row for scores sheet
             if (scores.length === 0) {
-                let headerRow = [];
-                indicators.forEach((cat, catX) => {            
+                let categoryRow = ['','','',''];
+                let headerRow = ['Date', 'Contact Name', 'Email', 'Location'];
+                let startcol = headerRow.length;
+
+                indicators.forEach((cat, catX) => {                                
+                    // Calculate merges    
+                    endcol = startcol + cat.length - 1;
+                    merges.push({ s: { r:0, c:startcol }, e: { r:0, c:endcol }});
+                    startcol = endcol + 1;
+
                     cat.forEach((indicator, indX) => {
-                        let label = indicator.name;;
+                        // Only add category label for first indicator in that category
+                        if (indX > 0)
+                            categoryRow.push('');
+                        else {
+                            let catLabel = categories[catX];
+                            categoryRow.push(catLabel);
+                        }
+
+                        // Add indicator label to header row
+                        let label = indicator.name;
                         headerRow.push(label);
                     });
                 });
+                scores.push(categoryRow);
                 scores.push(headerRow);
             }
 
-            if (!exportData) {
-                exportData = JSON.stringify({
-                    assessment_id: assessmentId,
-                    created: assessment.created,
-                    fullname: assessment.contactInfo.fullname,
-                    email: assessment.contactInfo.email,
-                    location: assessment.contactInfo.location
-                });
-            }
-
-            scores.push(scores_to_array(assessment.scores));
+            let scoreRow = scores_to_array(assessment.scores);
+            scoreRow.unshift(assessment.created, assessment.contactInfo.fullname, assessment.contactInfo.email, assessment.contactInfo.location);
+            scores.push(scoreRow);
         });
 
         console.log(scores);
 
         // Create workbook and add the worksheets
         let wb = XLSX.utils.book_new();
-        // let ws = XLSX.utils.json_to_sheet(exportData);
+        // let ws = XLSX.utils.json_to_sheet(globalContactInfoJSON);
         let ws2 = XLSX.utils.aoa_to_sheet(scores);
-        // XLSX.utils.book_append_sheet(wb, ws, "MMT Assessments");
+        ws2['!merges'] = merges;
+        // merges.forEach((merge) => {
+        //     console.log(merge); 
+        //     ws2[merges.s].s = {
+        //         type: 'style',
+        //         fill: {
+        //             type: 'pattern',
+        //             patternType: 'solid',
+        //             fgColor: { rgb: 'FFFF0000' }, // Red color
+        //         },
+        //         };
+        // });
+        // XLSX.utils.book_append_sheet(wb, ws, "MMT Assessments - Contact Info");
         XLSX.utils.book_append_sheet(wb, ws2, "MMT Indicator Scores");
 
         // Export to file
