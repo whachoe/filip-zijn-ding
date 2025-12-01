@@ -90,8 +90,10 @@ legend {
 
 .export-wrapper {
       width: 100%;
-      display: flex;
-      justify-content: center;
+
+      .statsline {        
+        display: block;
+      }
 }
 
 .mmt-button {

@@ -103,5 +103,12 @@ function generateRandomDate(from, to) {
   const y = new Date().getFullYear();
   const yearEl = document.getElementById('year');
   if(yearEl) yearEl.textContent = y;
+
+  // Update total records count in export panel
+  const totalRecordsEl = document.getElementById('total_records');
+  if(totalRecordsEl) {
+      const records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
+      totalRecordsEl.textContent = records.length;
+  }
 })();
 
