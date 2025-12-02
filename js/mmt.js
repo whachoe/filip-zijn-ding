@@ -897,6 +897,17 @@
         XLSX.writeFile(wb, "mmt_assessments.xlsx");        
     }
 
+    function delete_assessments_confirmation() {
+        if (confirm("Are you sure you want to delete all recorded assessments? This action cannot be undone.")) {
+            delete_assessments();
+        }
+    }
+    
+    function delete_assessments() {
+        localStorage.clear();
+        updateTotalRecords();
+    }
+
     /////////////////////////////// GLOBAL INIT ////////////////////////////////
 
     // Refresh the Reports tab

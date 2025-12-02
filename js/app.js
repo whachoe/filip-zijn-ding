@@ -38,6 +38,13 @@ function generateRandomDate(from, to) {
   );
 }
 
+function updateTotalRecords() {
+  const totalRecordsEl = document.getElementById('total_records');
+  if(totalRecordsEl) {
+      const records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
+      totalRecordsEl.textContent = records.length;
+  }
+}
 
 //////////////////// GLOBAL SETUP ////////////////////
 (function(){
@@ -105,10 +112,6 @@ function generateRandomDate(from, to) {
   if(yearEl) yearEl.textContent = y;
 
   // Update total records count in export panel
-  const totalRecordsEl = document.getElementById('total_records');
-  if(totalRecordsEl) {
-      const records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
-      totalRecordsEl.textContent = records.length;
-  }
+  updateTotalRecords();
 })();
 
