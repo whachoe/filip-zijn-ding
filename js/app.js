@@ -42,8 +42,7 @@ function updateTotalRecords() {
   const totalRecordsEl = document.getElementById('total_records');
   if(totalRecordsEl) {
       const records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
-      totalRecordsE
-      l.textContent = records.length;
+      totalRecordsEl.textContent = records.length;
   }
 }
 
