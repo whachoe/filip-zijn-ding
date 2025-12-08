@@ -42,8 +42,11 @@ function updateTotalRecords() {
   const totalRecordsEl = document.getElementById('total_records');
   if(totalRecordsEl) {
       const records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
-      totalRecordsEl.textContent = records.length;
+      totalRecordsE
+      l.textContent = records.length;
   }
+}
+
 function makeArrayUnique(a) {
   return [...new Set(a)];
 }
