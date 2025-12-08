@@ -540,11 +540,14 @@
     function generateScoretable() {
         // Fetch the last 3 assessments
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-        let last3 = assessmentList ? assessmentList.slice(1).slice(-3) : [];
-        let currentId   = last3.pop();    // newest
-        let previous2Id = last3.pop();    // middle child
-        let previous1Id = last3.pop();    // oldest
-        
+        // let last3 = assessmentList ? assessmentList.slice(1).slice(-3) : [];
+        // console.log("Last 3:", last3);
+
+        let currentId   = assessmentList.pop();    // newest
+        let previous2Id = assessmentList.pop();    // middle child
+        let previous1Id = assessmentList.pop();    // oldest
+        console.log(currentId, previous2Id, previous1Id);
+
         let current   = currentId ? JSON.parse(localStorage.getItem(currentId)) : null;
         let previous2 = previous2Id ? JSON.parse(localStorage.getItem(previous2Id)) : null;
         let previous1 = previous1Id ? JSON.parse(localStorage.getItem(previous1Id)) : null;
@@ -554,8 +557,8 @@
             scoretable[catX] = [];
             scoretable[catX][0] = cat;
             scoretable[catX][1] = current   ? calculate_percentage(current.scores, catX)   : 0;
-            scoretable[catX][2] = previous1 ? calculate_percentage(previous2.scores, catX) : 0;
-            scoretable[catX][3] = previous2 ? calculate_percentage(previous1.scores, catX) : 0;
+            scoretable[catX][2] = previous2 ? calculate_percentage(previous2.scores, catX) : 0;
+            scoretable[catX][3] = previous1 ? calculate_percentage(previous1.scores, catX) : 0;
         });
 
         return scoretable;
