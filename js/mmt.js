@@ -546,7 +546,7 @@
         let currentId   = assessmentList.pop();    // newest
         let previous2Id = assessmentList.pop();    // middle child
         let previous1Id = assessmentList.pop();    // oldest
-        console.log(currentId, previous2Id, previous1Id);
+        // console.log(currentId, previous2Id, previous1Id);
 
         let current   = currentId ? JSON.parse(localStorage.getItem(currentId)) : null;
         let previous2 = previous2Id ? JSON.parse(localStorage.getItem(previous2Id)) : null;

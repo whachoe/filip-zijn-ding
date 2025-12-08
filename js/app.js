@@ -101,7 +101,7 @@ function makeArrayUnique(a) {
   const contactInfo = localStorage.getItem('contactInfo');
   if(contactInfo) {
       const info = JSON.parse(contactInfo);
-      console.log("Loading contactinfo from localstorage", info);
+      // console.log("Loading contactinfo from localstorage", info);
       document.getElementById('full-name').value = info.fullName || '';
       document.getElementById('email-address').value = info.email || '';
       document.getElementById('location').value = info.location || '';
