@@ -38,6 +38,9 @@ function generateRandomDate(from, to) {
   );
 }
 
+function makeArrayUnique(a) {
+  return [...new Set(a)];
+}
 
 //////////////////// GLOBAL SETUP ////////////////////
 (function(){

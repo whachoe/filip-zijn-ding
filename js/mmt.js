@@ -758,7 +758,7 @@
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
         if (!assessmentList) assessmentList = [];
         assessmentList.push(assessmentId);
-        localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+        localStorage.setItem("assessment_list", JSON.stringify(makeArrayUnique(assessmentList)));
 
         // Now redirect to reports panel
         refreshReports();
@@ -792,8 +792,9 @@
         // Now update the assessment list
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
         if (!assessmentList) assessmentList = [];
+        
         assessmentList.push(assessmentId);
-        localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+        localStorage.setItem("assessment_list", JSON.stringify(makeArrayUnique(assessmentList)));
     }
 
     /**
