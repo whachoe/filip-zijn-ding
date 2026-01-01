@@ -539,7 +539,7 @@
     
     function generateScoretable() {
         // Fetch the last 3 assessments
-        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
+        let assessmentList = JSON.parse(localStorage.getItem('assessment_list')) || [];
         // let last3 = assessmentList ? assessmentList.slice(1).slice(-3) : [];
         // console.log("Last 3:", last3);
 
