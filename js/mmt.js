@@ -474,67 +474,293 @@
 
 //////////////////////////////// END OF INDICATOR DATA //////////////////////////////
 
-    function generate_assessment_form(categories, indicators) {
-        let html = `        
-          <div id="my-slider" class="swiffy-slider slider-nav-arrow slider-nav-outside-expand slider-item-first-visible slider-nav-noloop slider-item-nogap slider-indicators-round slider-indicators-sm" aria-roledescription="carousel">
-          <form id="assessment-form" onsubmit="save_assessment(); return false;">
-            <ul class="slider-container">`;
-
-        let visible_class = "slide-visible";    
+    // Build flat list of all questions with category context
+    function buildQuestionList(categories, indicators) {
+        let questions = [];
         categories.forEach((category, catIdx) => {
-            // console.log(category, catIdx);            
-            html += `
-            <li id="slide-${catIdx+1}" class="${visible_class}">
-            <fieldset id="category-${catIdx}">
-            <legend>${category}</legend>`;
-
             indicators[catIdx].forEach((indicator, indIdx) => {
-                html += `<span class="indicator-label">${indicator.name}</span>`;
-                indicator.scores.forEach((score, scoreIdx) => {
-                    html += `<input type="radio" id="indicator-${catIdx}-${indIdx}-${scoreIdx}" class="indicator-value" name="indicator[${catIdx}][${indIdx}]" value="${scoreIdx + 1}" required /><label for="indicator-${catIdx}-${indIdx}-${scoreIdx}">${score}</label><br/>`;
+                questions.push({
+                    categoryIndex: catIdx,
+                    categoryName: category,
+                    indicatorIndex: indIdx,
+                    indicatorName: indicator.name,
+                    scores: indicator.scores
                 });
             });
-
-            let save_button = catIdx === categories.length - 1 ? `<input type="submit" class="save-btn" value="Save"></input>` : '';
-            html += `      
-                ${save_button}
-                </fieldset></li>`;
-            visible_class = "";
         });
-        
-        html += ` 
-          </ul>               
-            <button class="slider-nav" aria-abel="Previous page"></button>
-            <button class="slider-nav slider-nav-next" aria-label="Next page"></button>
+        return questions;
+    }
 
-            <ul class="slider-indicators">
-                <li class="active"></li>
-                <li></li>
-                <li></li>
-                <li></li>
-                <li></li>
-                <li></li>
-                <li></li>
-                <li></li>
-                <li></li>
-            </ul>
-          </form>  
+    // Global state for navigation
+    let currentQuestionIndex = 0;
+    let allQuestions = [];
+    let currentAssessmentId = null;
+
+    function generate_assessment_form(categories, indicators) {
+        allQuestions = buildQuestionList(categories, indicators);
+        
+        let html = `
+          <div id="assessment-container">
+            <!-- Progress Bar -->
+            <div class="progress-container">
+              <div class="progress-info">
+                <span id="progress-text">Question 1 of ${allQuestions.length}</span>
+                <span id="progress-percentage">0%</span>
+              </div>
+              <div class="progress-bar-track">
+                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+              </div>
+              <div id="category-indicator" class="category-indicator">${allQuestions[0].categoryName}</div>
+            </div>
+
+            <!-- Question Display -->
+            <form id="assessment-form">
+              <div id="question-container"></div>
+              
+              <!-- Navigation Buttons -->
+              <div class="question-nav">
+                <button type="button" id="prev-btn" class="nav-btn" disabled>Previous</button>
+                <button type="button" id="next-btn" class="nav-btn">Next</button>
+                <button type="button" id="finish-btn" class="nav-btn save-btn" style="display:none;">Finish Assessment</button>
+              </div>
+            </form>
           </div>`;
 
         return html;
     }
 
+    function renderQuestion(index) {
+        if (index < 0 || index >= allQuestions.length) return;
+        
+        const question = allQuestions[index];
+        const questionContainer = document.getElementById('question-container');
+        const fieldName = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
+        
+        let html = `
+          <fieldset class="question-fieldset">
+            <legend class="category-label">${question.categoryName}</legend>
+            <h3 class="indicator-label">${question.indicatorName}</h3>
+            <div class="score-options">`;
+        
+        question.scores.forEach((score, scoreIdx) => {
+            const inputId = `q-${index}-score-${scoreIdx}`;
+            const value = scoreIdx + 1;
+            html += `
+              <div class="score-option">
+                <input type="radio" 
+                       id="${inputId}" 
+                       name="${fieldName}" 
+                       value="${value}" 
+                       class="score-radio">
+                <label for="${inputId}" class="score-label">
+                  <span class="score-number">${value}</span>
+                  <span class="score-description">${score}</span>
+                </label>
+              </div>`;
+        });
+        
+        html += `
+            </div>
+          </fieldset>`;
+        
+        questionContainer.innerHTML = html;
+        
+        // Restore previously saved answer if exists
+        const savedAnswer = getAssessmentProgress();
+        if (savedAnswer && savedAnswer.scores && savedAnswer.scores[fieldName]) {
+            const savedValue = savedAnswer.scores[fieldName];
+            const radioToCheck = document.querySelector(`input[name="${fieldName}"][value="${savedValue}"]`);
+            if (radioToCheck) radioToCheck.checked = true;
+        }
+        
+        // Add change listener to save progress
+        const radios = document.querySelectorAll('.score-radio');
+        radios.forEach(radio => {
+            radio.addEventListener('change', () => saveProgress());
+        });
+    }
+
+    function updateProgressBar() {
+        const progressText = document.getElementById('progress-text');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressFill = document.getElementById('progress-bar-fill');
+        const categoryIndicator = document.getElementById('category-indicator');
+        
+        const current = currentQuestionIndex + 1;
+        const total = allQuestions.length;
+        const percentage = Math.round((current / total) * 100);
+        
+        progressText.textContent = `Question ${current} of ${total}`;
+        progressPercentage.textContent = `${percentage}%`;
+        progressFill.style.width = `${percentage}%`;
+        categoryIndicator.textContent = allQuestions[currentQuestionIndex].categoryName;
+    }
+
+    function updateNavigationButtons() {
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        
+        // Enable/disable previous button
+        prevBtn.disabled = currentQuestionIndex === 0;
+        
+        // Show finish button on last question, hide next button
+        if (currentQuestionIndex === allQuestions.length - 1) {
+            nextBtn.style.display = 'none';
+            finishBtn.style.display = 'inline-block';
+        } else {
+            nextBtn.style.display = 'inline-block';
+            finishBtn.style.display = 'none';
+        }
+    }
+
+    function navigateToQuestion(index) {
+        if (index < 0 || index >= allQuestions.length) return;
+        
+        currentQuestionIndex = index;
+        renderQuestion(index);
+        updateProgressBar();
+        updateNavigationButtons();
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function initAssessmentNavigation() {
+        // Look for any incomplete assessment in localStorage
+        const incompleteAssessment = findIncompleteAssessment();
+        
+        if (incompleteAssessment) {
+            // Resume incomplete assessment
+            currentAssessmentId = incompleteAssessment.id;
+            currentQuestionIndex = incompleteAssessment.progress.currentQuestionIndex || 0;
+        } else {
+            // Start new assessment
+            currentAssessmentId = create_assessment_id();
+            currentQuestionIndex = 0;
+        }
+        
+        // Render first question
+        renderQuestion(currentQuestionIndex);
+        updateProgressBar();
+        updateNavigationButtons();
+        
+        // Attach event listeners (remove old ones first)
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        
+        // Clone and replace to remove old listeners
+        prevBtn.replaceWith(prevBtn.cloneNode(true));
+        nextBtn.replaceWith(nextBtn.cloneNode(true));
+        finishBtn.replaceWith(finishBtn.cloneNode(true));
+        
+        // Add new listeners
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            navigateToQuestion(currentQuestionIndex - 1);
+        });
+        
+        document.getElementById('next-btn').addEventListener('click', () => {
+            navigateToQuestion(currentQuestionIndex + 1);
+        });
+        
+        document.getElementById('finish-btn').addEventListener('click', () => {
+            save_assessment();
+        });
+    }
+    
+    function findIncompleteAssessment() {
+        // Check assessment list for any incomplete assessments
+        const assessmentList = JSON.parse(localStorage.getItem('assessment_list') || '[]');
+        
+        for (let id of assessmentList) {
+            const data = localStorage.getItem(id);
+            if (data) {
+                const assessment = JSON.parse(data);
+                // Return first incomplete assessment found
+                if (assessment.progress && !assessment.progress.completed) {
+                    return assessment;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    function startNewAssessment() {
+        // Force start a completely fresh assessment
+        currentAssessmentId = create_assessment_id();
+        currentQuestionIndex = 0;
+        
+        // Render fresh state
+        renderQuestion(currentQuestionIndex);
+        updateProgressBar();
+        updateNavigationButtons();
+    }
+
+    function getAssessmentProgress() {
+        if (!currentAssessmentId) return null;
+        const data = localStorage.getItem(currentAssessmentId);
+        return data ? JSON.parse(data) : null;
+    }
+
+    function saveProgress() {
+        const formData = new FormData(document.getElementById('assessment-form'));
+        const scores = Object.fromEntries(formData.entries());
+        
+        // Merge with existing scores
+        const existing = getAssessmentProgress();
+        const allScores = existing && existing.scores ? {...existing.scores, ...scores} : scores;
+        
+        const contactForm = document.getElementById('settings-form');
+        const contactData = new FormData(contactForm);
+        const contactInfo = {
+            fullname: contactData.get('full-name'),
+            email: contactData.get('email-address'),
+            location: contactData.get('location')
+        };
+        
+        const assessmentData = {
+            id: currentAssessmentId,
+            contactInfo: contactInfo,
+            scores: allScores,
+            progress: {
+                currentQuestionIndex: currentQuestionIndex,
+                totalQuestions: allQuestions.length,
+                lastUpdated: new Date().toISOString()
+            },
+            created: existing ? existing.created : new Date().toISOString(),
+            synced: false,
+            version: 1,
+            mediaAttachments: [],
+            notes: ""
+        };
+        
+        localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
+    }
+
     function calculate_percentage(scores, catX) {
-        let scoreCount = indicators[catX].length; // How many indicators in this category
+        let indicators_in_category = indicators[catX];
+        let answeredCount = 0;
         let scoreTotal = 0;
-        let maxScore = 4*scoreCount; // Max score per indicator is 4
 
-        for (i=0; i < scoreCount; i++) {
+        for (i=0; i < indicators_in_category.length; i++) {
             let label = "indicator["+catX+"]["+i+"]";
-            scoreTotal += parseInt(scores[label]);
-        }        
-
-        return Math.round((scoreTotal * 100)/maxScore);
+            let score = scores[label];
+            
+            // Only count answered questions
+            if (score !== undefined && score !== null && score !== '') {
+                answeredCount++;
+                scoreTotal += parseInt(score);
+            }
+        }
+        
+        // If no questions answered in this category, return 0
+        if (answeredCount === 0) return 0;
+        
+        // Calculate percentage based on answered questions only
+        let maxScore = 4 * answeredCount;
+        return Math.round((scoreTotal * 100) / maxScore);
     }
     
     function generateScoretable() {
@@ -725,45 +951,42 @@
     function create_assessment_id(date) {
         const curDate = date || new Date();
 
-        // Format: Y-m-d
-        return 'assessment-' + curDate.getFullYear() + '-' + (curDate.getMonth()+1) + '-' + curDate.getDate();
+        // Format: assessment_YYYYMMDD_HHMMSS
+        const year = curDate.getFullYear();
+        const month = String(curDate.getMonth() + 1).padStart(2, '0');
+        const day = String(curDate.getDate()).padStart(2, '0');
+        const hours = String(curDate.getHours()).padStart(2, '0');
+        const minutes = String(curDate.getMinutes()).padStart(2, '0');
+        const seconds = String(curDate.getSeconds()).padStart(2, '0');
+        
+        return `assessment_${year}${month}${day}_${hours}${minutes}${seconds}`;
     }
 
     function save_assessment() {
+        // Save final progress
+        saveProgress();
+        
+        const assessmentData = getAssessmentProgress();
+        if (!assessmentData) return;
+        
+        // Mark as complete and set final creation date
+        assessmentData.progress.completed = true;
+        assessmentData.progress.completedAt = new Date().toISOString();
+        assessmentData.created = new Date().toISOString();
+        localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
 
-        // Fetch the scores
-        const assesmentForm = document.getElementById('assessment-form');
-        const formData = new FormData(assesmentForm);
-        const scores = Object.fromEntries(formData.entries());
-        
-        // Fetch contact info from settings-screen
-        const contactForm = document.getElementById('settings-form');
-        const contactData = new FormData(contactForm);
-        const contactInfo = {
-            fullname: contactData.get('full-name'),
-            email: contactData.get('email-address'),
-            location: contactData.get('location')
-        };
-        
-        // Prepare assessment data object
-        const curDate = new Date().toISOString();
-        const assessmentData = {
-            contactInfo: contactInfo,
-            scores: scores,
-            created: curDate
+        // Add to assessment list if not already there
+        let assessmentList = JSON.parse(localStorage.getItem('assessment_list')) || [];
+        if (!assessmentList.includes(currentAssessmentId)) {
+            assessmentList.push(currentAssessmentId);
+            localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
         }
 
-        // Save assessmentData to server or local storage
-        let assessmentId = create_assessment_id();
-        localStorage.setItem(assessmentId, JSON.stringify(assessmentData));
+        // Reset for next assessment
+        currentAssessmentId = null;
+        currentQuestionIndex = 0;
 
-        // Now update the assessment list
-        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-        if (!assessmentList) assessmentList = [];
-        assessmentList.push(assessmentId);
-        localStorage.setItem("assessment_list", JSON.stringify(makeArrayUnique(assessmentList)));
-
-        // Now redirect to reports panel
+        // Redirect to reports panel
         refreshReports();
         u('button#tab-reports').trigger('click');
     }
@@ -876,7 +1099,7 @@
             scores.push(scoreRow);
         });
 
-        console.log(scores);
+        // console.log(scores);
 
         // Create workbook and add the worksheets
         let wb = XLSX.utils.book_new();
@@ -920,18 +1143,8 @@
     // Generate the Assessment Form
     document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
 
-    // Add the Next and Previous buttons to handle navigation
-    u(document.querySelectorAll('.next-btn')).each(btn => btn.addEventListener('click', (e) => {
-        let cat = e.currentTarget.getAttribute('category');
-        u(document.getElementById('category-${cat}')).addClass('hidden');
-        u(document.getElementById('category-${cat+1}')).removeClass('hidden');
-    }));
-    u(document.querySelectorAll('.prev-btn')).each(btn => btn.addEventListener('click', (e) => {
-        let cat = e.currentTarget.getAttribute('category');
-        
-        u(document.getElementById('category-${cat}')).addClass('hidden');
-        u(document.getElementById('category-${cat-1}')).removeClass('hidden');
-    }));
+    // Initialize the assessment navigation
+    initAssessmentNavigation();
 
     // Comment this line out. only used for testing
     // callNTimes(function() { create_random_assessment(indicators); }, 5, 100);    

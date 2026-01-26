@@ -73,7 +73,13 @@ function makeArrayUnique(a) {
   }
 
   tabs.forEach((tab, idx)=>{
-    tab.addEventListener('click', ()=> activateTab(tab));
+    tab.addEventListener('click', ()=> {
+      // Start fresh assessment when clicking Assessment tab
+      if(tab.id === 'tab-assessment' && typeof startNewAssessment === 'function') {
+        startNewAssessment();
+      }
+      activateTab(tab);
+    });
 
     // Disabled keyboard navigation for now so we can get the slider working properly. slider uses the same keys.
     // tab.addEventListener('keydown', (e)=>{
