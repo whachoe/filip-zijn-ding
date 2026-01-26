@@ -755,12 +755,16 @@
             }
         }
         
-        // If no questions answered in this category, return 0
-        if (answeredCount === 0) return 0;
+        // If no questions answered in this category, return object with 0 values
+        if (answeredCount === 0) return { percentage: 0, confidence: 0 };
         
         // Calculate percentage based on answered questions only
-        let maxScore = 4 * answeredCount;
-        return Math.round((scoreTotal * 100) / maxScore);
+        let percentage = Math.round((scoreTotal * 100) / (4 * answeredCount));
+        
+        // Calculate confidence (how many questions were answered)
+        let confidence = Math.round((answeredCount * 100) / indicators_in_category.length);
+        
+        return { percentage, confidence };
     }
     
     function generateScoretable() {
@@ -782,9 +786,9 @@
         categories.forEach((cat, catX) => {
             scoretable[catX] = [];
             scoretable[catX][0] = cat;
-            scoretable[catX][1] = current   ? calculate_percentage(current.scores, catX)   : 0;
-            scoretable[catX][2] = previous2 ? calculate_percentage(previous2.scores, catX) : 0;
-            scoretable[catX][3] = previous1 ? calculate_percentage(previous1.scores, catX) : 0;
+            scoretable[catX][1] = current   ? calculate_percentage(current.scores, catX)   : { percentage: 0, confidence: 0 };
+            scoretable[catX][2] = previous2 ? calculate_percentage(previous2.scores, catX) : { percentage: 0, confidence: 0 };
+            scoretable[catX][3] = previous1 ? calculate_percentage(previous1.scores, catX) : { percentage: 0, confidence: 0 };
         });
 
         return scoretable;
@@ -807,12 +811,16 @@
     function render_scoretable(scoretable) {
         u('table#reports-scoretable tbody').html('');
         scoretable.forEach((row) => {
+            let current = row[1];
+            let prev2 = row[2];
+            let prev1 = row[3];
+            
             let rowHtml = `
             <tr>
                 <td>${row[0]}</td>
-                <td align="center"class="${calculate_warning_level(row[1])}">${row[1]}</td>
-                <td align="center" class="${calculate_warning_level(row[2])}">${row[2]}</td>
-                <td align="center" class="${calculate_warning_level(row[3])}">${row[3]}</td>
+                <td align="center" class="${calculate_warning_level(current.percentage)}">${current.percentage}% (${current.confidence}%)</td>
+                <td align="center" class="${calculate_warning_level(prev2.percentage)}">${prev2.percentage}% (${prev2.confidence}%)</td>
+                <td align="center" class="${calculate_warning_level(prev1.percentage)}">${prev1.percentage}% (${prev1.confidence}%)</td>
             </tr>
             `;
 
@@ -825,7 +833,7 @@
             labels: categories,
             datasets: [{
                 label: 'Current',
-                data: scoretable.map(function(value) { return value[1]; }),
+                data: scoretable.map(function(value) { return value[1].percentage; }),
                 fill: true,
                 backgroundColor: '#cc3300',
                 borderColor: 'rgb(255, 99, 132)',
@@ -835,7 +843,7 @@
                 pointHoverBorderColor: 'rgb(255, 99, 132)'
             }, {
                 label: 'Previous 1',
-                data: scoretable.map(function(value) { return value[2]; }),
+                data: scoretable.map(function(value) { return value[2].percentage; }),
                 fill: true,
                 backgroundColor: '#ff9966',
                 borderColor: 'rgb(54, 162, 235)',
@@ -845,7 +853,7 @@
                 pointHoverBorderColor: 'rgb(54, 162, 235)'
             }, {
                 label: 'Previous 2',
-                data: scoretable.map(function(value) { return value[3]; }),
+                data: scoretable.map(function(value) { return value[3].percentage; }),
                 fill: true,
                 backgroundColor: '#ffcc00',
                 borderColor: 'rgb(54, 162, 235)',
@@ -889,7 +897,7 @@
             datasets: [{
                 axis: 'y',
                 label: 'Current',
-                data: scoretable.map(function(value) { return value[1]; }),
+                data: scoretable.map(function(value) { return value[1].percentage; }),
                 fill: true,
                 backgroundColor: '#cc3300',
                 borderColor: 'rgb(255, 99, 132)',
@@ -898,7 +906,7 @@
             {
                 axis: 'y',
                 label: 'Previous 1',
-                data: scoretable.map(function(value) { return value[2]; }),
+                data: scoretable.map(function(value) { return value[2].percentage; }),
                 fill: true,
                 backgroundColor: '#ff9966',
                 borderColor: 'rgb(54, 162, 235)',
@@ -907,7 +915,7 @@
             {
                 axis: 'y',
                 label: 'Previous 2',
-                data: scoretable.map(function(value) { return value[3]; }),
+                data: scoretable.map(function(value) { return value[3].percentage; }),
                 fill: true,
                 backgroundColor: '#ffcc00',
                 borderColor: 'rgb(54, 162, 235)',
