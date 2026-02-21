@@ -203,7 +203,7 @@ GET    /api/admin/users            # List all users
 
 #### Sync Strategy
 - **Offline-first**: All operations work without server
-- **Background sync**: Upload when connection detected
+- **Background sync**: Upload when a button `Send to Server` button is clicked in the `Export` tab of the frontend. This button is disabled when the user is offline.
 - **Conflict-free**: No server-side edits (server is read-only for assessments)
 
 #### Sync Logic

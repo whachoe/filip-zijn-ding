@@ -4,7 +4,7 @@
   "description": "Mobile-first responsive static site with 4 accessible tabs",
   "private": true,
   "scripts": {
-    "start": "live-server --open=./index.html"
+    "start-front": "live-server --open=./front/index.html"
   },
   "dependencies": {
     "live-server": "^1.2.2"

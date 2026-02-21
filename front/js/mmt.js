@@ -981,6 +981,11 @@
         assessmentData.progress.completed = true;
         assessmentData.progress.completedAt = new Date().toISOString();
         assessmentData.created = new Date().toISOString();
+        
+        // Add sync flag (not synced yet)
+        assessmentData.synced = false;
+        assessmentData.version = 1; // Question set version
+        
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
 
         // Add to assessment list if not already there
@@ -988,6 +993,11 @@
         if (!assessmentList.includes(currentAssessmentId)) {
             assessmentList.push(currentAssessmentId);
             localStorage.setItem("assessment_list", JSON.stringify(assessmentList));
+        }
+
+        // Update sync status
+        if (typeof updateSyncStatus === 'function') {
+            updateSyncStatus();
         }
 
         // Reset for next assessment
@@ -1141,6 +1151,11 @@
     function delete_assessments() {
         localStorage.clear();
         updateTotalRecords();
+        
+        // Update sync status after clearing
+        if (typeof updateSyncStatus === 'function') {
+            updateSyncStatus();
+        }
     }
 
     /////////////////////////////// GLOBAL INIT ////////////////////////////////

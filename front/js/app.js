@@ -44,6 +44,11 @@ function updateTotalRecords() {
       const records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
       totalRecordsEl.textContent = records.length;
   }
+  
+  // Also update sync status if function exists
+  if (typeof updateSyncStatus === 'function') {
+      updateSyncStatus();
+  }
 }
 
 function makeArrayUnique(a) {

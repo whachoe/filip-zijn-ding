@@ -22,6 +22,9 @@
         <button role="tab" aria-selected="false" aria-controls="panel-reports" id="tab-reports" tabindex="-1">Reports</button>
         <button role="tab" aria-selected="false" aria-controls="panel-export" id="tab-export" tabindex="-1">Export</button>
       </nav>
+      <div class="sync-indicator">
+        <span id="sync-icon" title="Sync status">⏳</span>
+      </div>
     </div>
   </header>
 
@@ -71,7 +74,18 @@
     <section id="panel-export" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-export" hidden>
       <h2>Export data</h2>
       <div class="export-wrapper">
-        <div class="statsline">Recorded assessments: <span id="total_records"></div>
+        <div class="statsline">Recorded assessments: <span id="total_records"></span></div>
+        
+        <!-- Sync Status Section -->
+        <div class="sync-section">
+          <h3>Sync to Server</h3>
+          <div id="sync-status-text" class="sync-status">Checking sync status...</div>
+          <div id="sync-message" class="sync-message" style="display: none;"></div>
+          <button id="sync-button" class="mmt-button" disabled>Send to Server</button>
+        </div>
+        
+        <hr />
+        
         <button id="export-xlsx-button" onclick="export_xlsx()" class="mmt-button">Export XLSX</button>
         <button id="delete-assessments-button" onclick="delete_assessments_confirmation()" class="mmt-button">Delete all Assessments</button>
       </div>
@@ -87,8 +101,11 @@
   <script src="js/umbrella.min.js" defer></script>
   <script src="js/chart.umd.js" defer></script>
   <script src="js/xlsx.full.min.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/sync.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/mmt.js" defer></script>
+  <script src="js/migrate.js" defer></script>
   <script src="js/swiffy-slider.min.js" defer></script>
   <script src="js/swiffy-slider-extensions.min.js" defer></script>
   

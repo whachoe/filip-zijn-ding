@@ -101,6 +101,88 @@ legend {
       }
 }
 
+/* Sync UI Styles */
+.sync-section {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sync-section h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.sync-status {
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.sync-status.success {
+  background: rgba(51, 153, 0, 0.15);
+  color: var(--warning5);
+  border: 1px solid rgba(51, 153, 0, 0.3);
+}
+
+.sync-status.warning {
+  background: rgba(255, 204, 0, 0.15);
+  color: var(--warning3);
+  border: 1px solid rgba(255, 204, 0, 0.3);
+}
+
+.sync-status.error {
+  background: rgba(204, 51, 0, 0.15);
+  color: var(--warning1);
+  border: 1px solid rgba(204, 51, 0, 0.3);
+}
+
+.sync-message {
+  padding: 0.65rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.sync-message.success {
+  background: rgba(51, 153, 0, 0.15);
+  color: var(--warning5);
+  border: 1px solid rgba(51, 153, 0, 0.3);
+}
+
+.sync-message.error {
+  background: rgba(204, 51, 0, 0.15);
+  color: var(--warning1);
+  border: 1px solid rgba(204, 51, 0, 0.3);
+}
+
+.sync-message.info {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.sync-indicator {
+  margin-left: auto;
+  font-size: 1.5rem;
+}
+
+.sync-indicator span {
+  cursor: help;
+}
+
+.export-wrapper hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 1.5rem 0;
+}
+
 .mmt-button {
     background-color: var(--accent);
     color: #021223;
