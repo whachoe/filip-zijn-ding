@@ -1,4 +1,4 @@
-    const categories = [
+    let categories = [
         'Category 1: Governance, Regulation, and Market Management',
         'Category 2: Infrastructure and Facilities',
         'Category 3: Biosecurity and Hygiene Practices',
@@ -474,6 +474,50 @@
 
 //////////////////////////////// END OF INDICATOR DATA //////////////////////////////
 
+    function getCurrentQuestionVersion() {
+        const version = parseInt(localStorage.getItem('question_set_version') || '1', 10);
+        return isNaN(version) ? 1 : version;
+    }
+
+    function applyStoredQuestionSet() {
+        const storedQuestionSet = localStorage.getItem('question_set_data');
+
+        if (!storedQuestionSet) {
+            localStorage.setItem('question_set_version', String(getCurrentQuestionVersion()));
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(storedQuestionSet);
+            if (Array.isArray(parsed.categories) && Array.isArray(parsed.indicators) && parsed.categories.length === parsed.indicators.length) {
+                categories = parsed.categories;
+                indicators = parsed.indicators;
+            }
+        } catch (error) {
+            console.warn('Could not load stored question set:', error);
+        }
+    }
+
+    function getCurrentQuestionSet() {
+        return JSON.parse(JSON.stringify({
+            version: getCurrentQuestionVersion(),
+            categories: categories,
+            indicators: indicators
+        }));
+    }
+
+    window.getCurrentQuestionSet = getCurrentQuestionSet;
+
+    function refreshQuestionnaire() {
+        document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
+        initAssessmentNavigation();
+        refreshReports();
+    }
+
+    window.refreshQuestionnaire = refreshQuestionnaire;
+
+    applyStoredQuestionSet();
+
     // Build flat list of all questions with category context
     function buildQuestionList(categories, indicators) {
         let questions = [];
@@ -731,7 +775,7 @@
             },
             created: existing ? existing.created : new Date().toISOString(),
             synced: false,
-            version: 1,
+            version: getCurrentQuestionVersion(),
             mediaAttachments: [],
             notes: ""
         };
@@ -984,7 +1028,7 @@
         
         // Add sync flag (not synced yet)
         assessmentData.synced = false;
-        assessmentData.version = 1; // Question set version
+        assessmentData.version = getCurrentQuestionVersion();
         
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
 

@@ -151,6 +151,12 @@ const QuestionAPI = {
   }
 };
 
+if (typeof window !== 'undefined') {
+  window.AuthAPI = AuthAPI;
+  window.AssessmentAPI = AssessmentAPI;
+  window.QuestionAPI = QuestionAPI;
+}
+
 // Export functions
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {

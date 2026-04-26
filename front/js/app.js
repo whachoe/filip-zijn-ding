@@ -55,6 +55,119 @@ function makeArrayUnique(a) {
   return [...new Set(a)];
 }
 
+function setAuthStatus(message, type) {
+  const statusEl = document.getElementById('auth-status');
+  if (!statusEl) return;
+  statusEl.textContent = message;
+  statusEl.className = `sync-status ${type || 'info'}`;
+}
+
+async function refreshQuestionSetFromServer() {
+  if (typeof QuestionAPI === 'undefined' || typeof isLoggedIn !== 'function' || !isLoggedIn()) {
+    return;
+  }
+
+  try {
+    const data = await QuestionAPI.getLatest();
+    if (!data || !data.questionSet) return;
+
+    const questionSet = data.questionSet;
+    const categories = Array.isArray(questionSet.categories) ? questionSet.categories : JSON.parse(questionSet.categories || '[]');
+    const indicators = Array.isArray(questionSet.indicators) ? questionSet.indicators : JSON.parse(questionSet.indicators || '[]');
+
+    localStorage.setItem('question_set_version', String(questionSet.version || 1));
+    localStorage.setItem('question_set_data', JSON.stringify({ categories, indicators }));
+
+    if (typeof window.refreshQuestionnaire === 'function') {
+      window.refreshQuestionnaire();
+    }
+  } catch (error) {
+    console.log('Question set refresh skipped:', error.message);
+  }
+}
+
+function updateAuthUI() {
+  const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+  const loginButton = document.getElementById('login-button');
+  const logoutButton = document.getElementById('logout-button');
+
+  if (user) {
+    setAuthStatus(`Logged in as ${user.username}`, 'success');
+    if (loginButton) loginButton.disabled = false;
+    if (logoutButton) {
+      logoutButton.hidden = false;
+      logoutButton.removeAttribute('hidden');
+      logoutButton.classList.remove('hidden');
+    }
+  } else {
+    setAuthStatus('Not logged in.', 'info');
+    if (logoutButton) {
+      logoutButton.hidden = true;
+      logoutButton.setAttribute('hidden', 'hidden');
+      logoutButton.classList.add('hidden');
+    }
+  }
+
+  if (typeof updateSyncStatus === 'function') {
+    updateSyncStatus();
+  }
+}
+
+async function handleLogin() {
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
+
+  if (!username || !password) {
+    setAuthStatus('Enter username and password to log in.', 'warning');
+    return;
+  }
+
+  try {
+    await AuthAPI.login(username, password);
+    await refreshQuestionSetFromServer();
+    updateAuthUI();
+    setAuthStatus(`Welcome back, ${username}.`, 'success');
+  } catch (error) {
+    setAuthStatus(error.message || 'Login failed.', 'error');
+  }
+}
+
+async function handleLogout() {
+  try {
+    await AuthAPI.logout();
+    updateAuthUI();
+    setAuthStatus('You have been logged out.', 'info');
+  } catch (error) {
+    setAuthStatus(error.message || 'Logout failed.', 'error');
+  }
+}
+
+function initAuthControls() {
+  const loginButton = document.getElementById('login-button');
+  const logoutButton = document.getElementById('logout-button');
+
+  if (loginButton && !loginButton.dataset.bound) {
+    loginButton.addEventListener('click', handleLogin);
+    loginButton.dataset.bound = 'true';
+  }
+
+  if (logoutButton && !logoutButton.dataset.bound) {
+    logoutButton.addEventListener('click', handleLogout);
+    logoutButton.dataset.bound = 'true';
+  }
+
+  if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+    AuthAPI.getMe()
+      .then(refreshQuestionSetFromServer)
+      .catch(() => clearToken())
+      .finally(updateAuthUI);
+  } else {
+    updateAuthUI();
+  }
+}
+
+window.updateAuthUI = updateAuthUI;
+
 //////////////////// GLOBAL SETUP ////////////////////
 (function(){
   const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
@@ -128,5 +241,8 @@ function makeArrayUnique(a) {
 
   // Update total records count in export panel
   updateTotalRecords();
+
+  // Initialize account controls
+  initAuthControls();
 })();
 

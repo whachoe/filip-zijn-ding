@@ -21,8 +21,9 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static files - serve frontend
+// Static files - serve frontend and backend-owned admin assets
 app.use(express.static(path.join(__dirname, '../front')));
+app.use('/admin-assets', express.static(path.join(__dirname, 'admin')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -34,6 +35,11 @@ app.use('/api/admin', authenticateToken, adminRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Serve backend-owned admin console
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin/index.html'));
 });
 
 // Serve frontend for all other routes

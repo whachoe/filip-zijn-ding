@@ -430,6 +430,9 @@ function migratePhase1Data() {
 - SQL injection prevention: Use parameterized queries
 - XSS prevention: Sanitize user inputs
 
+### Nodejs 2025 Design Patterns
+Read https://kashw1n.com/blog/nodejs-2025 and use the patterns defined there. Take special care of the list of Take-aways at the end of the article detailing the key principles for modern NodeJS development.
+
 ---
 
 ## Estimated Timeline
