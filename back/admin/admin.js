@@ -47,10 +47,10 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 const AuthAPI = {
-  async login(username, password) {
+  async login(email, password) {
     const data = await apiRequest('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password })
     });
     if (data.token) {
       setToken(data.token);
@@ -80,10 +80,24 @@ const AdminAPI = {
   getUsers() {
     return apiRequest('/api/admin/users');
   },
-  updateUserRole(userId, role) {
-    return apiRequest(`/api/admin/users/${userId}/role`, {
+  getUser(userId) {
+    return apiRequest(`/api/admin/users/${userId}`);
+  },
+  createUser(payload) {
+    return apiRequest('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+  updateUser(userId, payload) {
+    return apiRequest(`/api/admin/users/${userId}`, {
       method: 'PUT',
-      body: JSON.stringify({ role })
+      body: JSON.stringify(payload)
+    });
+  },
+  deleteUser(userId) {
+    return apiRequest(`/api/admin/users/${userId}`, {
+      method: 'DELETE'
     });
   },
   getQuestionSets() {
@@ -101,9 +115,25 @@ const AdminAPI = {
 };
 
 let adminState = {
+  users: [],
   questionSets: [],
   latestQuestionSet: null,
-  assessments: []
+  assessments: [],
+  loaded: {
+    users: false,
+    questionSets: false,
+    assessments: false
+  },
+  activeTab: 'users'
+};
+
+let flashMessage = null;
+
+const TAB_PANELS = {
+  users: 'panel-users',
+  'question-versions': 'panel-question-versions',
+  'question-editor': 'panel-question-editor',
+  assessments: 'panel-assessments'
 };
 
 function escapeHtml(value) {
@@ -138,8 +168,27 @@ function showAdminMessage(message, type) {
   el.className = `status ${type || 'info'}`;
 }
 
-function setShellVisible(visible) {
-  document.getElementById('admin-shell').classList.toggle('hidden', !visible);
+function setAuthenticatedUI(isAuthenticated) {
+  document.getElementById('admin-login-card').classList.toggle('hidden', isAuthenticated);
+  document.getElementById('admin-shell').classList.toggle('hidden', !isAuthenticated);
+  document.getElementById('logout-button').classList.toggle('hidden', !isAuthenticated);
+}
+
+function setActiveTabUI(tabName) {
+  Object.entries(TAB_PANELS).forEach(([name, panelId]) => {
+    const tabButton = document.querySelector(`.admin-tab[data-tab="${name}"]`);
+    const panel = document.getElementById(panelId);
+    const isActive = name === tabName;
+
+    if (tabButton) {
+      tabButton.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
+
+    if (panel) {
+      panel.hidden = !isActive;
+      panel.classList.toggle('hidden', !isActive);
+    }
+  });
 }
 
 function renderUsers(users) {
@@ -149,18 +198,15 @@ function renderUsers(users) {
     return;
   }
 
-  let html = '<table class="table"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Action</th></tr></thead><tbody>';
+  let html = '<table class="table"><thead><tr><th>Email</th><th>Role</th><th>Action</th></tr></thead><tbody>';
   users.forEach((user) => {
     html += `<tr>
-      <td>${escapeHtml(user.username)}</td>
       <td>${escapeHtml(user.email || '—')}</td>
-      <td>
-        <select id="role-select-${user.id}">
-          <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
-          <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
-        </select>
+      <td>${escapeHtml(user.role || 'user')}</td>
+      <td class="inline-actions">
+        <button class="secondary" type="button" onclick="editAdminUser(${user.id})">Edit</button>
+        <button class="secondary" type="button" onclick="deleteAdminUser(${user.id}, '${escapeHtml(user.email || '')}')">Delete</button>
       </td>
-      <td><button class="secondary" type="button" onclick="updateAdminUserRole(${user.id})">Save</button></td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -187,7 +233,7 @@ function renderAssessmentSummary(assessments) {
   const recent = assessments.slice(0, 10);
   container.innerHTML = `<p><strong>Total synced assessments:</strong> ${escapeHtml(assessments.length)}</p>
     <table class="table"><thead><tr><th>ID</th><th>User</th><th>Version</th><th>Created</th></tr></thead><tbody>
-    ${recent.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td></tr>`).join('')}
+    ${recent.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td></tr>`).join('')}
     </tbody></table>`;
 }
 
@@ -287,17 +333,28 @@ function mutateEditor(action, catIdx, indIdx) {
   renderQuestionEditor(workingSet);
 }
 
-async function updateAdminUserRole(userId) {
+function editAdminUser(userId) {
+  window.location.href = `/admin/users/${userId}/edit`;
+}
+window.editAdminUser = editAdminUser;
+
+async function deleteAdminUser(userId, email) {
+  const confirmed = window.confirm(`Delete user ${email || userId}? This cannot be undone.`);
+  if (!confirmed) {
+    return;
+  }
+
   try {
-    const role = document.getElementById(`role-select-${userId}`).value;
-    await AdminAPI.updateUserRole(userId, role);
-    showAdminMessage('User role updated.', 'success');
-    await loadAdminData();
+    await AdminAPI.deleteUser(userId);
+    showAdminMessage('User deleted.', 'success');
+    adminState.loaded.users = false;
+    await loadUsersTabData(true);
+    renderUsers(adminState.users);
   } catch (error) {
-    showAdminMessage(error.message || 'Failed to update role.', 'error');
+    showAdminMessage(error.message || 'Failed to delete user.', 'error');
   }
 }
-window.updateAdminUserRole = updateAdminUserRole;
+window.deleteAdminUser = deleteAdminUser;
 
 async function publishQuestionVersion() {
   try {
@@ -309,62 +366,99 @@ async function publishQuestionVersion() {
     localStorage.setItem('question_set_data', JSON.stringify({ categories: savedSet.categories, indicators: savedSet.indicators }));
 
     showAdminMessage(`Published version ${savedSet.version}.`, 'success');
-    await loadAdminData();
+    adminState.loaded.questionSets = false;
+    await loadQuestionSetsData(true);
+    if (adminState.activeTab === 'question-versions') {
+      renderQuestionVersions(adminState.questionSets);
+    }
+    if (adminState.activeTab === 'question-editor') {
+      renderQuestionEditor(adminState.latestQuestionSet);
+    }
   } catch (error) {
     showAdminMessage(error.message || 'Failed to publish version.', 'error');
   }
 }
 
-async function loadAdminData() {
-  const currentUser = getCurrentUser();
-  if (!currentUser || currentUser.role !== 'admin') {
-    setShellVisible(false);
-    showAdminMessage('Admin access is required.', 'warning');
+async function loadUsersTabData(force) {
+  if (!force && adminState.loaded.users) {
     return;
   }
+  const usersResponse = await AdminAPI.getUsers();
+  adminState.users = usersResponse.users || [];
+  adminState.loaded.users = true;
+}
 
-  setShellVisible(true);
-  showAdminMessage('Loading admin data...', 'info');
+async function loadQuestionSetsData(force) {
+  if (!force && adminState.loaded.questionSets) {
+    return;
+  }
+  const questionSetsResponse = await AdminAPI.getQuestionSets();
+  adminState.questionSets = (questionSetsResponse.questionSets || []).map(normalizeQuestionSet);
+  adminState.latestQuestionSet = adminState.questionSets[0] || null;
+  adminState.loaded.questionSets = true;
+}
+
+async function loadAssessmentsData(force) {
+  if (!force && adminState.loaded.assessments) {
+    return;
+  }
+  const assessmentsResponse = await AdminAPI.getAssessments();
+  adminState.assessments = assessmentsResponse.assessments || [];
+  adminState.loaded.assessments = true;
+}
+
+async function activateTab(tabName, forceReload) {
+  adminState.activeTab = tabName;
+  setActiveTabUI(tabName);
 
   try {
-    const [usersResponse, questionSetsResponse, assessmentsResponse] = await Promise.all([
-      AdminAPI.getUsers(),
-      AdminAPI.getQuestionSets(),
-      AdminAPI.getAssessments()
-    ]);
+    if (tabName === 'users') {
+      showAdminMessage('Loading users...', 'info');
+      await loadUsersTabData(!!forceReload);
+      renderUsers(adminState.users);
+    } else if (tabName === 'question-versions') {
+      showAdminMessage('Loading question versions...', 'info');
+      await loadQuestionSetsData(!!forceReload);
+      renderQuestionVersions(adminState.questionSets);
+    } else if (tabName === 'question-editor') {
+      showAdminMessage('Loading question editor...', 'info');
+      await loadQuestionSetsData(!!forceReload);
+      renderQuestionEditor(adminState.latestQuestionSet);
+    } else if (tabName === 'assessments') {
+      showAdminMessage('Loading synced assessments...', 'info');
+      await loadAssessmentsData(!!forceReload);
+      renderAssessmentSummary(adminState.assessments);
+    }
 
-    adminState.questionSets = (questionSetsResponse.questionSets || []).map(normalizeQuestionSet);
-    adminState.latestQuestionSet = adminState.questionSets[0] || null;
-    adminState.assessments = assessmentsResponse.assessments || [];
-
-    renderUsers(usersResponse.users || []);
-    renderQuestionVersions(adminState.questionSets);
-    renderQuestionEditor(adminState.latestQuestionSet);
-    renderAssessmentSummary(adminState.assessments);
-    showAdminMessage('Admin data loaded.', 'success');
+    showAdminMessage('Active tab loaded.', 'success');
   } catch (error) {
-    showAdminMessage(error.message || 'Failed to load admin data.', 'error');
+    showAdminMessage(error.message || 'Failed to load tab data.', 'error');
   }
 }
 
 async function handleLogin() {
-  const username = document.getElementById('auth-username').value.trim();
+  const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
-  if (!username || !password) {
-    setStatus('Enter username and password.', 'warning');
+  if (!email || !password) {
+    setStatus('Enter email and password.', 'warning');
     return;
   }
 
   try {
-    const data = await AuthAPI.login(username, password);
+    const data = await AuthAPI.login(email, password);
     if (!data.user || data.user.role !== 'admin') {
-      setShellVisible(false);
-      setStatus('Login succeeded, but this account is not an admin.', 'warning');
+      setAuthenticatedUI(false);
+      setStatus('You are not an admin.', 'warning');
       return;
     }
 
-    setStatus(`Logged in as ${data.user.username}`, 'success');
-    await loadAdminData();
+    setStatus(`Logged in as ${data.user.email || data.user.username}`, 'success');
+    setAuthenticatedUI(true);
+    await activateTab('users', true);
+    if (flashMessage) {
+      showAdminMessage(flashMessage.text, flashMessage.type);
+      flashMessage = null;
+    }
   } catch (error) {
     setStatus(error.message || 'Login failed.', 'error');
   }
@@ -372,15 +466,36 @@ async function handleLogin() {
 
 async function handleLogout() {
   await AuthAPI.logout();
-  setShellVisible(false);
+  setAuthenticatedUI(false);
+  adminState.loaded = {
+    users: false,
+    questionSets: false,
+    assessments: false
+  };
   setStatus('Logged out.', 'info');
 }
 
 async function bootstrap() {
+  const url = new URL(window.location.href);
+  const msg = url.searchParams.get('msg');
+  if (msg === 'user-saved') {
+    flashMessage = {
+      text: 'User saved successfully.',
+      type: 'success'
+    };
+    url.searchParams.delete('msg');
+    window.history.replaceState({}, '', url.pathname + url.search);
+  }
+
   document.getElementById('login-button').addEventListener('click', handleLogin);
   document.getElementById('logout-button').addEventListener('click', handleLogout);
-  document.getElementById('admin-refresh-button').addEventListener('click', loadAdminData);
   document.getElementById('admin-save-version-button').addEventListener('click', publishQuestionVersion);
+  document.getElementById('create-user-button').addEventListener('click', () => {
+    window.location.href = '/admin/users/new';
+  });
+  document.querySelectorAll('.admin-tab').forEach((tabButton) => {
+    tabButton.addEventListener('click', () => activateTab(tabButton.dataset.tab, true));
+  });
   document.getElementById('admin-question-editor').addEventListener('click', (event) => {
     const action = event.target.dataset.action;
     if (!action) return;
@@ -389,23 +504,28 @@ async function bootstrap() {
 
   const token = getToken();
   if (!token) {
-    setShellVisible(false);
+    setAuthenticatedUI(false);
     return;
   }
 
   try {
     const me = await AuthAPI.getMe();
     if (!me.user || me.user.role !== 'admin') {
-      setShellVisible(false);
+      setAuthenticatedUI(false);
       setStatus('This account does not have admin access.', 'warning');
       return;
     }
 
-    setStatus(`Logged in as ${me.user.username}`, 'success');
-    await loadAdminData();
+    setStatus(`Logged in as ${me.user.email || me.user.username}`, 'success');
+    setAuthenticatedUI(true);
+    await activateTab('users', true);
+    if (flashMessage) {
+      showAdminMessage(flashMessage.text, flashMessage.type);
+      flashMessage = null;
+    }
   } catch (error) {
     clearToken();
-    setShellVisible(false);
+    setAuthenticatedUI(false);
     setStatus(error.message || 'Please log in.', 'error');
   }
 }

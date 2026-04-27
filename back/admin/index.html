@@ -9,22 +9,23 @@
 <body>
   <header class="page-header">
     <div class="container">
-      <h1>MMT Admin Console</h1>
+      <div class="page-header-row">
+        <h1>MMT Admin Console</h1>
+        <button id="logout-button" class="hidden" type="button">Logout</button>
+      </div>
       <p>Backend-served administration for users, question versions, and synced assessments.</p>
     </div>
   </header>
 
   <main class="container">
-    <section class="card">
+    <section id="admin-login-card" class="card">
       <h2>Admin Login</h2>
       <div id="auth-status" class="status info">Not logged in.</div>
       <form id="auth-form" class="stack" action="#" onsubmit="return false;">
-        <!-- <input id="auth-username" type="text" placeholder="Username"> -->        
         <input id="auth-email" type="email" placeholder="Email">
         <input id="auth-password" type="password" placeholder="Password">
         <div class="actions">
           <button id="login-button" type="button">Login</button>
-          <button id="logout-button" type="button">Logout</button>
         </div>
       </form>
     </section>
@@ -32,33 +33,47 @@
     <section id="admin-shell" class="hidden">
       <div id="admin-message" class="status info">Admin tools ready.</div>
 
-      <div class="actions top-actions">
-        <button id="admin-refresh-button" type="button">Refresh Admin Data</button>
-        <button id="admin-save-version-button" type="button">Publish New Question Version</button>
-      </div>
+      <nav class="admin-tabs" role="tablist" aria-label="Admin sections">
+        <button id="tab-users" class="admin-tab" type="button" role="tab" aria-selected="true" aria-controls="panel-users" data-tab="users">User Management</button>
+        <button id="tab-question-versions" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-question-versions" data-tab="question-versions">Question Versions</button>
+        <button id="tab-question-editor" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-question-editor" data-tab="question-editor">Question Editor</button>
+        <button id="tab-assessments" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-assessments" data-tab="assessments">Synced Assessments</button>
+      </nav>
 
-      <div class="grid">
+      <section id="panel-users" class="admin-panel" role="tabpanel" aria-labelledby="tab-users">
         <section class="card">
-          <h2>User Management</h2>
+          <div class="card-title-row">
+            <h2>User Management</h2>
+            <button id="create-user-button" type="button">Create</button>
+          </div>
           <div id="admin-users-list">No data loaded.</div>
         </section>
+      </section>
 
+      <section id="panel-question-versions" class="admin-panel hidden" role="tabpanel" aria-labelledby="tab-question-versions" hidden>
         <section class="card">
           <h2>Question Versions</h2>
           <div id="admin-question-versions">No data loaded.</div>
         </section>
+      </section>
 
+      <section id="panel-question-editor" class="admin-panel hidden" role="tabpanel" aria-labelledby="tab-question-editor" hidden>
         <section class="card full-width">
           <h2>Question Editor</h2>
           <p>Publishing creates a new immutable version.</p>
+          <div class="actions">
+            <button id="admin-save-version-button" type="button">Publish New Question Version</button>
+          </div>
           <div id="admin-question-editor">No data loaded.</div>
         </section>
+      </section>
 
+      <section id="panel-assessments" class="admin-panel hidden" role="tabpanel" aria-labelledby="tab-assessments" hidden>
         <section class="card full-width">
           <h2>Synced Assessments</h2>
           <div id="admin-assessment-summary">No data loaded.</div>
         </section>
-      </div>
+      </section>
     </section>
   </main>
 

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MMT Admin - User</title>
+  <link rel="stylesheet" href="/admin-assets/admin.css">
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+      <div class="page-header-row">
+        <h1 id="page-title">User</h1>
+        <button id="logout-button" type="button">Logout</button>
+      </div>
+      <p>Manage user account details.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div id="form-status" class="status info">Loading...</div>
+      <form id="user-form" class="stack" action="#" onsubmit="return false;">
+        <label for="user-first-name">First Name</label>
+        <input id="user-first-name" type="text" placeholder="First name">
+
+        <label for="user-last-name">Last Name</label>
+        <input id="user-last-name" type="text" placeholder="Last name">
+
+        <label for="user-location">Location</label>
+        <input id="user-location" type="text" placeholder="Location">
+
+        <label for="user-email">Email</label>
+        <input id="user-email" type="email" placeholder="user@example.com" required>
+
+        <label for="user-password">Password</label>
+        <input id="user-password" type="password" placeholder="Required for create, optional for edit">
+
+        <label for="user-role">Role</label>
+        <select id="user-role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <div class="actions">
+          <button id="save-user-button" type="button">Save</button>
+          <button id="cancel-button" class="secondary" type="button">Cancel</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/admin-assets/user-form.js" defer></script>
+</body>
+</html>

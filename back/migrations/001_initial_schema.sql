@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   email VARCHAR(255),
+  first_name VARCHAR(100),
+  last_name VARCHAR(100),
+  location VARCHAR(255),
   role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -48,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_question_sets_version ON question_sets(version);
 
 -- Insert default admin user (password: admin123)
 INSERT INTO users (username, password_hash, email, role) 
-VALUES ('admin', '$2b$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa', 'admin@example.com', 'admin')
+VALUES ('admin', '$2b$10$g8V8nQi.PS/vuxdas/23SuL8PLy8gvqknaJOSOejtXMx6T0fTUpBK', 'admin@example.com', 'admin')
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert initial question set (version 1) - this will be populated from the frontend data

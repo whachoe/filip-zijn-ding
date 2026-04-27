@@ -92,7 +92,7 @@ function updateAuthUI() {
   const logoutButton = document.getElementById('logout-button');
 
   if (user) {
-    setAuthStatus(`Logged in as ${user.username}`, 'success');
+    setAuthStatus(`Logged in as ${user.email || user.username}`, 'success');
     if (loginButton) loginButton.disabled = false;
     if (logoutButton) {
       logoutButton.hidden = false;
@@ -114,19 +114,20 @@ function updateAuthUI() {
 }
 
 async function handleLogin() {
-  const username = document.getElementById('auth-username').value.trim();
+  const emailField = document.getElementById('auth-email');
+  const email = emailField ? emailField.value.trim() : '';
   const password = document.getElementById('auth-password').value;
 
-  if (!username || !password) {
-    setAuthStatus('Enter username and password to log in.', 'warning');
+  if (!email || !password) {
+    setAuthStatus('Enter email and password to log in.', 'warning');
     return;
   }
 
   try {
-    await AuthAPI.login(username, password);
+    await AuthAPI.login(email, password);
     await refreshQuestionSetFromServer();
     updateAuthUI();
-    setAuthStatus(`Welcome back, ${username}.`, 'success');
+    setAuthStatus(`Welcome back, ${email}.`, 'success');
   } catch (error) {
     setAuthStatus(error.message || 'Login failed.', 'error');
   }

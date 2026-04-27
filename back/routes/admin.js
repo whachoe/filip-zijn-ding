@@ -1,8 +1,27 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const db = require('../config/db');
 const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+const SALT_ROUNDS = 10;
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function generateInternalUsername() {
+  return `user_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
+function normalizeText(value) {
+  const text = String(value || '').trim();
+  return text === '' ? null : text;
+}
 
 // All admin routes require admin role
 router.use(requireAdmin);
@@ -11,13 +30,176 @@ router.use(requireAdmin);
 router.get('/users', async (req, res) => {
   try {
     const result = await db.query(
-      'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC'
+      'SELECT id, username, email, first_name, last_name, location, role, created_at FROM users ORDER BY created_at DESC'
     );
 
     res.json({ users: result.rows });
   } catch (error) {
     console.error('Get users error:', error);
     res.status(500).json({ error: 'Failed to get users' });
+  }
+});
+
+// Get user by id
+router.get('/users/:id', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT id, username, email, first_name, last_name, location, role, created_at FROM users WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ user: result.rows[0] });
+  } catch (error) {
+    console.error('Get user by id error:', error);
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Create user
+router.post('/users', async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body.email);
+    const { password, role } = req.body;
+    const firstName = normalizeText(req.body.firstName);
+    const lastName = normalizeText(req.body.lastName);
+    const location = normalizeText(req.body.location);
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Valid email required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    if (role && !['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be user or admin' });
+    }
+
+    const existing = await db.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
+      [email]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    const internalUsername = generateInternalUsername();
+
+    const result = await db.query(
+      'INSERT INTO users (username, password_hash, email, first_name, last_name, location, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, username, email, first_name, last_name, location, role, created_at',
+      [internalUsername, passwordHash, email, firstName, lastName, location, role || 'user']
+    );
+
+    res.status(201).json({ message: 'User created', user: result.rows[0] });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Update user
+router.put('/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const email = normalizeEmail(req.body.email);
+    const password = req.body.password ? String(req.body.password) : '';
+    const role = req.body.role;
+    const firstName = normalizeText(req.body.firstName);
+    const lastName = normalizeText(req.body.lastName);
+    const location = normalizeText(req.body.location);
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email required' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Valid email required' });
+    }
+
+    if (role && !['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be user or admin' });
+    }
+
+    if (password && password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const existing = await db.query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const emailConflict = await db.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND id <> $2',
+      [email, userId]
+    );
+
+    if (emailConflict.rows.length > 0) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    if (req.user.id === Number(userId) && role && role !== 'admin') {
+      return res.status(400).json({ error: 'You cannot remove your own admin role' });
+    }
+
+    let result;
+    if (password) {
+      const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      result = await db.query(
+        'UPDATE users SET email = $1, first_name = $2, last_name = $3, location = $4, role = $5, password_hash = $6 WHERE id = $7 RETURNING id, username, email, first_name, last_name, location, role, created_at',
+        [email, firstName, lastName, location, role || existing.rows[0].role, passwordHash, userId]
+      );
+    } else {
+      result = await db.query(
+        'UPDATE users SET email = $1, first_name = $2, last_name = $3, location = $4, role = $5 WHERE id = $6 RETURNING id, username, email, first_name, last_name, location, role, created_at',
+        [email, firstName, lastName, location, role || existing.rows[0].role, userId]
+      );
+    }
+
+    res.json({ message: 'User updated', user: result.rows[0] });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Delete user
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+
+    if (req.user.id === userId) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+
+    const result = await db.query(
+      'DELETE FROM users WHERE id = $1 RETURNING id, email',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted', user: result.rows[0] });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
@@ -133,7 +315,7 @@ router.put('/questions/:id', async (req, res) => {
 router.get('/assessments', async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT a.id, a.user_id, u.username, a.question_set_version, a.created_at, a.synced_at 
+      `SELECT a.id, a.user_id, u.username, u.email, a.question_set_version, a.created_at, a.synced_at 
        FROM assessments a 
        JOIN users u ON a.user_id = u.id 
        ORDER BY a.created_at DESC`

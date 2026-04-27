@@ -71,10 +71,10 @@ async function apiRequest(endpoint, options = {}) {
 
 // Auth API
 const AuthAPI = {
-  async register(username, password, email) {
+  async register(email, password) {
     const data = await apiRequest('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, password, email })
+      body: JSON.stringify({ email, password })
     });
     
     if (data.token) {
@@ -85,10 +85,10 @@ const AuthAPI = {
     return data;
   },
   
-  async login(username, password) {
+  async login(email, password) {
     const data = await apiRequest('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password })
     });
     
     if (data.token) {

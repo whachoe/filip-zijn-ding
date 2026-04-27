@@ -40,7 +40,7 @@ npm run migrate
 ```
 
 This will create all tables and insert a default admin user:
-- Username: `admin`
+- Email: `admin@example.com`
 - Password: `admin123`
 - **⚠️ Change this password immediately in production!**
 
@@ -110,12 +110,12 @@ Use curl, Postman, or any HTTP client:
 # Register user
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"password123","email":"test@example.com"}'
+  -d '{"email":"test@example.com","password":"password123"}'
 
 # Login
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"password123"}'
+  -d '{"email":"test@example.com","password":"password123"}'
 
 # Use returned token for authenticated requests
 curl http://localhost:3000/api/auth/me \
