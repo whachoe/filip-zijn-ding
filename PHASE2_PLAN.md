@@ -86,7 +86,7 @@ Transform the client-side MVP into an offline-first, server-synced application w
 #### Display Changes
 - Update reports table to show confidence per category
 - Add confidence column: "Category | Score | Confidence | Prev 1 | Prev 2"
-- Color-code confidence like scores (red <20%, yellow 40-60%, green 80%+)
+- Color-code score like scores (dark red 0-20, red <20%, yellow 40-60%, green 60-80%+, dark green 80%+)
 
 #### Files to Modify
 - `js/mmt.js`: Update scoring functions
