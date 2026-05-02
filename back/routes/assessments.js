@@ -3,6 +3,19 @@ const db = require('../config/db');
 
 const router = express.Router();
 
+function normalizeAssessmentPayload(assessment) {
+  const normalized = { ...assessment };
+  const contactInfo = (normalized.contactInfo && typeof normalized.contactInfo === 'object')
+    ? { ...normalized.contactInfo }
+    : {};
+
+  contactInfo.fullName = String(contactInfo.fullName || contactInfo.fullname || '').trim();
+  delete contactInfo.fullname;
+
+  normalized.contactInfo = contactInfo;
+  return normalized;
+}
+
 // Get all assessments for current user
 router.get('/', async (req, res) => {
   try {
@@ -46,7 +59,8 @@ router.post('/', async (req, res) => {
 
     for (const assessment of assessments) {
       try {
-        const { id, contactInfo, scores, progress, mediaAttachments, notes, created, version } = assessment;
+        const normalizedAssessment = normalizeAssessmentPayload(assessment);
+        const { id, contactInfo, scores, progress, mediaAttachments, notes, created, version } = normalizedAssessment;
 
         if (!id || !contactInfo || !scores) {
           errors.push({ id, error: 'Missing required fields' });
@@ -60,13 +74,13 @@ router.post('/', async (req, res) => {
           // Update existing assessment
           await db.query(
             'UPDATE assessments SET data = $1, question_set_version = $2, synced_at = NOW() WHERE id = $3',
-            [JSON.stringify(assessment), version || 1, id]
+            [JSON.stringify(normalizedAssessment), version || 1, id]
           );
         } else {
           // Insert new assessment
           await db.query(
             'INSERT INTO assessments (id, user_id, data, question_set_version, created_at, synced_at) VALUES ($1, $2, $3, $4, $5, NOW())',
-            [id, req.user.id, JSON.stringify(assessment), version || 1, created || new Date().toISOString()]
+            [id, req.user.id, JSON.stringify(normalizedAssessment), version || 1, created || new Date().toISOString()]
           );
         }
 

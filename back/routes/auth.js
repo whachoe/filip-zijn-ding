@@ -18,6 +18,19 @@ function generateInternalUsername() {
   return `user_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 }
 
+function serializeUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    location: user.location,
+    role: user.role,
+    createdAt: user.created_at
+  };
+}
+
 // Register new user
 router.post('/register', async (req, res) => {
   try {
@@ -65,15 +78,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        location: user.location,
-        role: user.role
-      }
+      user: serializeUser(user)
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -93,7 +98,7 @@ router.post('/login', async (req, res) => {
 
     // Get user
     const result = await db.query(
-      'SELECT id, username, password_hash, email, first_name, last_name, location, role FROM users WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, username, password_hash, email, first_name, last_name, location, role, created_at FROM users WHERE LOWER(email) = LOWER($1)',
       [email]
     );
 
@@ -115,15 +120,7 @@ router.post('/login', async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        location: user.location,
-        role: user.role
-      }
+      user: serializeUser(user)
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -143,7 +140,8 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user: result.rows[0] });
+    const user = result.rows[0];
+    res.json({ user: serializeUser(user) });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });

@@ -1,7 +1,7 @@
 function save_settings() {
     // Check if all 3 fields in the form are filled in and if so: enable the "New Assessment" tab
-    const fullName = document.getElementById('full-name').value.trim();
-    const email = document.getElementById('email-address').value.trim();
+    const fullName = document.getElementById('fullName').value.trim();
+    const email = document.getElementById('email').value.trim();
     const location = document.getElementById('location').value;
 
     const assessmentTab = document.getElementById('tab-assessment');
@@ -72,6 +72,47 @@ function setAuthStatus(message, type) {
   if (!statusEl) return;
   statusEl.textContent = message;
   statusEl.className = `sync-status ${type || 'info'}`;
+}
+
+function backfillContactInfoFromUser(user) {
+  if (!user || typeof user !== 'object') return;
+
+  let existing = {};
+  try {
+    existing = JSON.parse(localStorage.getItem('contactInfo') || '{}') || {};
+  } catch (error) {
+    existing = {};
+  }
+
+  const firstName = String(user.firstName || '').trim();
+  const lastName = String(user.lastName || '').trim();
+  const location = String(user.location || '').trim();
+  const email = (user.email || '').trim();
+  const fullNameFromUser = `${firstName} ${lastName}`.trim();
+
+  const merged = {
+    fullName: (existing.fullName || '').trim() || fullNameFromUser,
+    email: (existing.email || '').trim() || email,
+    location: (existing.location || '').trim() || location
+  };
+
+  localStorage.setItem('contactInfo', JSON.stringify(merged));
+
+  const fullNameInput = document.getElementById('fullName');
+  const emailInput = document.getElementById('email');
+  const locationInput = document.getElementById('location');
+
+  if (fullNameInput && !fullNameInput.value.trim() && merged.fullName) {
+    fullNameInput.value = merged.fullName;
+  }
+  if (emailInput && !emailInput.value.trim() && merged.email) {
+    emailInput.value = merged.email;
+  }
+  if (locationInput && !locationInput.value.trim() && merged.location) {
+    locationInput.value = merged.location;
+  }
+
+  save_settings();
 }
 
 async function refreshQuestionSetFromServer() {
@@ -154,7 +195,8 @@ async function handleLogin() {
   }
 
   try {
-    await AuthAPI.login(email, password);
+    const loginData = await AuthAPI.login(email, password);
+    backfillContactInfoFromUser(loginData && loginData.user);
     await refreshQuestionSetFromServer();
     updateAuthUI();
     setAuthStatus(`Welcome back, ${email}.`, 'success');
@@ -189,7 +231,10 @@ function initAuthControls() {
 
   if (typeof isLoggedIn === 'function' && isLoggedIn()) {
     AuthAPI.getMe()
-      .then(refreshQuestionSetFromServer)
+      .then((data) => {
+        backfillContactInfoFromUser(data && data.user);
+        return refreshQuestionSetFromServer();
+      })
       .catch(() => clearToken())
       .finally(updateAuthUI);
   } else {
@@ -275,8 +320,8 @@ window.updateAuthUI = updateAuthUI;
   if(contactInfo) {
       const info = JSON.parse(contactInfo);
       // console.log("Loading contactinfo from localstorage", info);
-      document.getElementById('full-name').value = info.fullName || '';
-      document.getElementById('email-address').value = info.email || '';
+      document.getElementById('fullName').value = info.fullName || '';
+      document.getElementById('email').value = info.email || '';
       document.getElementById('location').value = info.location || '';
 
       // Check if all 3 fields in the form are filled in and if so: enable the "New Assessment" tab

@@ -117,7 +117,7 @@ function renderAssessment(assessmentRow) {
       <strong>User:</strong> ${escapeHtml(assessmentRow.email || assessmentRow.username || 'Unknown')}<br>
       <strong>Question Set Version:</strong> ${escapeHtml(assessmentRow.question_set_version || '—')}<br>
       <strong>Created:</strong> ${escapeHtml(created ? new Date(created).toLocaleString() : '—')}<br>
-      <strong>Contact Name:</strong> ${escapeHtml(contactInfo.fullName || contactInfo.fullname || '—')}<br>
+      <strong>Contact Name:</strong> ${escapeHtml(contactInfo.fullName || '—')}<br>
       <strong>Contact Email:</strong> ${escapeHtml(contactInfo.email || '—')}<br>
       <strong>Location:</strong> ${escapeHtml(contactInfo.location || '—')}
     </div>

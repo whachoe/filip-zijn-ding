@@ -758,8 +758,8 @@
         const contactForm = document.getElementById('settings-form');
         const contactData = new FormData(contactForm);
         const contactInfo = {
-            fullname: contactData.get('full-name'),
-            email: contactData.get('email-address'),
+            fullName: contactData.get('fullName'),
+            email: contactData.get('email'),
             location: contactData.get('location')
         };
         
@@ -1069,7 +1069,7 @@
         
         let newAssessment = {
             contactInfo: {
-                fullname: 'John Doe',
+                fullName: 'John Doe',
                 email: 'jdoe@fake.com',
                 location: 'New York, USA'
             },
@@ -1160,7 +1160,7 @@
             }
 
             let scoreRow = scores_to_array(assessment.scores);
-            scoreRow.unshift(assessment.created, assessment.contactInfo.fullname, assessment.contactInfo.email, assessment.contactInfo.location);
+            scoreRow.unshift(assessment.created, assessment.contactInfo.fullName, assessment.contactInfo.email, assessment.contactInfo.location);
             scores.push(scoreRow);
         });
 
