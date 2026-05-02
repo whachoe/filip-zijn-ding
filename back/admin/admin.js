@@ -112,6 +112,9 @@ const AdminAPI = {
   getAssessments() {
     return apiRequest('/api/admin/assessments');
   },
+  getAssessmentsExport() {
+    return apiRequest('/api/admin/assessments?full=true');
+  },
   getAssessment(assessmentId) {
     return apiRequest(`/api/admin/assessments/${assessmentId}`);
   },
@@ -243,6 +246,114 @@ function renderAssessmentSummary(assessments) {
     <table class="table"><thead><tr><th>ID</th><th>User</th><th>Version</th><th>Created</th><th>Action</th></tr></thead><tbody>
     ${recent.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td><td class="inline-actions"><button class="secondary" type="button" onclick="showAdminAssessment('${escapeHtml(item.id)}')">Show</button><button class="secondary" type="button" onclick="deleteAdminAssessment('${escapeHtml(item.id)}')">Delete</button></td></tr>`).join('')}
     </tbody></table>`;
+}
+
+// ---------------------------------------------------------------------------
+// Export helpers
+// ---------------------------------------------------------------------------
+
+function buildExportRows(assessments) {
+  // Group all assessments by question-set version.
+  // Use the first assessment's question set as the column template.
+  const first = assessments.find((a) => a.categories && a.indicators);
+  if (!first) return null;
+
+  const categories = parseJsonMaybe(first.categories, []);
+  const indicators = parseJsonMaybe(first.indicators, []);
+
+  const categoryRow = ['Date', 'Contact Name', 'Email', 'Location'];
+  const headerRow   = ['Date', 'Contact Name', 'Email', 'Location'];
+  const merges = [];
+  let startCol = 4;
+
+  indicators.forEach((cat, catX) => {
+    const endCol = startCol + cat.length - 1;
+    merges.push({ s: { r: 0, c: startCol }, e: { r: 0, c: endCol } });
+
+    cat.forEach((indicator, indX) => {
+      categoryRow.push(indX === 0 ? (categories[catX] || `Category ${catX + 1}`) : '');
+      headerRow.push(indicator.name || `Indicator ${catX + 1}.${indX + 1}`);
+    });
+
+    startCol = endCol + 1;
+  });
+
+  const dataRows = assessments.map((row) => {
+    const assessment = row.data || {};
+    const scores = assessment.scores || {};
+    const contact = assessment.contactInfo || {};
+    const created = assessment.created_at || assessment.created || row.created_at;
+
+    const scoreValues = [];
+    indicators.forEach((cat, catX) => {
+      cat.forEach((_, indX) => {
+        const key = `indicator[${catX}][${indX}]`;
+        const v = scores[key];
+        scoreValues.push(v != null && v !== '' ? Number(v) : '');
+      });
+    });
+
+    return [
+      created ? new Date(created).toLocaleString() : '',
+      contact.fullName || contact.fullname || '',
+      contact.email || '',
+      contact.location || '',
+      ...scoreValues
+    ];
+  });
+
+  return { rows: [categoryRow, headerRow, ...dataRows], merges };
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function exportAssessments(format) {
+  const statusEl = document.getElementById('export-status');
+  statusEl.textContent = 'Exporting…';
+  try {
+    const response = await AdminAPI.getAssessmentsExport();
+    const assessments = response.assessments || [];
+
+    if (!assessments.length) {
+      statusEl.textContent = 'No assessments to export.';
+      return;
+    }
+
+    const built = buildExportRows(assessments);
+    if (!built) {
+      statusEl.textContent = 'No question-set data available for export.';
+      return;
+    }
+
+    if (format === 'xlsx') {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(built.rows);
+      ws['!merges'] = built.merges;
+      XLSX.utils.book_append_sheet(wb, ws, 'MMT Indicator Scores');
+      XLSX.writeFile(wb, 'mmt_assessments.xlsx');
+    } else {
+      const csvContent = built.rows.map((row) =>
+        row.map((cell) => {
+          const s = String(cell == null ? '' : cell);
+          return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        }).join(',')
+      ).join('\r\n');
+      triggerDownload(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }), 'mmt_assessments.csv');
+    }
+
+    statusEl.textContent = '';
+  } catch (err) {
+    statusEl.textContent = err.message || 'Export failed.';
+  }
 }
 
 function showAdminAssessment(assessmentId) {
@@ -645,6 +756,8 @@ async function bootstrap() {
     window.location.href = '/admin/users/new';
   });
   document.getElementById('assessment-back-button').addEventListener('click', hideAssessmentDetail);
+  document.getElementById('export-xlsx-button').addEventListener('click', () => exportAssessments('xlsx'));
+  document.getElementById('export-csv-button').addEventListener('click', () => exportAssessments('csv'));
   document.querySelectorAll('.admin-tab').forEach((tabButton) => {
     tabButton.addEventListener('click', () => activateTab(tabButton.dataset.tab, true));
   });

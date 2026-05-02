@@ -71,7 +71,14 @@
       <section id="panel-assessments" class="admin-panel hidden" role="tabpanel" aria-labelledby="tab-assessments" hidden>
         <!-- List view -->
         <section id="assessment-list-view" class="card full-width">
-          <h2>Synced Assessments</h2>
+          <div class="card-title-row">
+            <h2>Synced Assessments</h2>
+            <div class="actions">
+              <span id="export-status" style="font-size:0.8rem;color:var(--muted)"></span>
+              <button id="export-xlsx-button" class="secondary" type="button">Export XLSX</button>
+              <button id="export-csv-button" class="secondary" type="button">Export CSV</button>
+            </div>
+          </div>
           <div id="admin-assessment-summary">No data loaded.</div>
         </section>
         <!-- Detail view -->
@@ -90,6 +97,7 @@
     </section>
   </main>
 
+  <script src="/js/xlsx.full.min.js" defer></script>
   <script src="/admin-assets/admin.js" defer></script>
 </body>
 </html>

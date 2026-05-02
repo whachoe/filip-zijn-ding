@@ -312,15 +312,23 @@ router.put('/questions/:id', async (req, res) => {
 });
 
 // Get all assessments (for all users)
+// Add ?full=true to include data JSONB and joined question-set categories/indicators
 router.get('/assessments', async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT a.id, a.user_id, u.username, u.email, a.question_set_version, a.created_at, a.synced_at 
-       FROM assessments a 
-       JOIN users u ON a.user_id = u.id 
-       ORDER BY a.created_at DESC`
-    );
+    const full = req.query.full === 'true';
+    const query = full
+      ? `SELECT a.id, a.user_id, u.username, u.email, a.data, a.question_set_version,
+                a.created_at, a.synced_at, q.categories, q.indicators
+         FROM assessments a
+         JOIN users u ON a.user_id = u.id
+         LEFT JOIN question_sets q ON q.version = a.question_set_version
+         ORDER BY a.created_at DESC`
+      : `SELECT a.id, a.user_id, u.username, u.email, a.question_set_version, a.created_at, a.synced_at
+         FROM assessments a
+         JOIN users u ON a.user_id = u.id
+         ORDER BY a.created_at DESC`;
 
+    const result = await db.query(query);
     res.json({ assessments: result.rows });
   } catch (error) {
     console.error('Get all assessments error:', error);
