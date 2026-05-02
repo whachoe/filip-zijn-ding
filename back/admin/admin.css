@@ -167,6 +167,16 @@ button.secondary {
   gap: 0.5rem;
   margin-top: 0.75rem;
 }
+.score-cell {
+  width: 4rem;
+  text-align: center;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.score-empty {
+  color: var(--muted);
+  font-weight: 400;
+}
 @media (min-width: 900px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -234,12 +234,32 @@ canvas#bar-graph {
   margin-top: 100px;
 }
 
-.auth-section {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+.auth-card {
+  width: 100%;
+  margin: 0 0 1.25rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(121, 196, 193, 0.14), rgba(255, 255, 255, 0.04));
+  border-radius: 14px;
+  border: 1px solid rgba(121, 196, 193, 0.28);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+}
+
+.auth-card-header {
+  margin-bottom: 0.9rem;
+}
+
+.auth-card-header h2 {
+  margin: 0 0 0.35rem;
+  color: var(--accent);
+}
+
+.auth-card-header p {
+  margin: 0;
+  color: #d7dfc8;
+}
+
+.auth-form {
+  margin-top: 0.75rem;
 }
 
 .button-row {
@@ -300,7 +320,7 @@ canvas#bar-graph {
 .question-fieldset {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  padding: 1.5rem;
+  /* padding: 1.5rem; */
   margin-bottom: 1.5rem;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
 }

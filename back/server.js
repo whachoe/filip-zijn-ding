@@ -50,6 +50,10 @@ app.get('/admin/users/:id/edit', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin/user-form.html'));
 });
 
+app.get('/admin/assessments/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin/assessment-view.html'));
+});
+
 // Serve frontend for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../front/index.html'));

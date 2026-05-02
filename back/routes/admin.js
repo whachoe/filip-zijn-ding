@@ -328,4 +328,55 @@ router.get('/assessments', async (req, res) => {
   }
 });
 
+// Get specific assessment with question-set details
+router.get('/assessments/:id', async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT a.id,
+              a.user_id,
+              u.username,
+              u.email,
+              a.data,
+              a.question_set_version,
+              a.created_at,
+              a.synced_at,
+              q.categories,
+              q.indicators
+       FROM assessments a
+       JOIN users u ON a.user_id = u.id
+       LEFT JOIN question_sets q ON q.version = a.question_set_version
+       WHERE a.id = $1`,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Assessment not found' });
+    }
+
+    res.json({ assessment: result.rows[0] });
+  } catch (error) {
+    console.error('Get admin assessment error:', error);
+    res.status(500).json({ error: 'Failed to get assessment' });
+  }
+});
+
+// Delete any assessment (admin)
+router.delete('/assessments/:id', async (req, res) => {
+  try {
+    const result = await db.query(
+      'DELETE FROM assessments WHERE id = $1 RETURNING id',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Assessment not found' });
+    }
+
+    res.json({ message: 'Assessment deleted', id: req.params.id });
+  } catch (error) {
+    console.error('Delete admin assessment error:', error);
+    res.status(500).json({ error: 'Failed to delete assessment' });
+  }
+});
+
 module.exports = router;

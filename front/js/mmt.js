@@ -582,7 +582,6 @@
         
         let html = `
           <fieldset class="question-fieldset">
-            <legend class="category-label">${question.categoryName}</legend>
             <h3 class="indicator-label">${question.indicatorName}</h3>
             <div class="score-options">`;
         
@@ -1042,6 +1041,10 @@
         // Update sync status
         if (typeof updateSyncStatus === 'function') {
             updateSyncStatus();
+        }
+
+        if (typeof updateTotalRecords === 'function') {
+            updateTotalRecords();
         }
 
         // Reset for next assessment

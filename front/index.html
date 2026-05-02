@@ -30,23 +30,26 @@
 
   <main class="container">
     <section id="panel-home" class="tab-panel" role="tabpanel" aria-labelledby="tab-home">
-      <h2>Welcome</h2>
-      <p>Fill in the form below to get started with our MMT Assessments.</p>
-<!--
-      <div class="auth-section">
-        <h3>Account Access</h3>
+      <section id="frontend-login-section" class="auth-card" aria-label="Account login">
+        <div class="auth-card-header">
+          <h2>Login</h2>
+          <p>Sign in to sync assessments with the backend.</p>
+        </div>
         <div id="auth-status" class="sync-status info">Not logged in</div>
-        <form id="auth-form" class="assessment-form" action="#" onsubmit="return false;">
+        <form id="auth-form" class="assessment-form auth-form" action="#" onsubmit="return false;">
           <input id="auth-email" name="auth-email" type="email" placeholder="Email" />
           <input id="auth-password" name="auth-password" type="password" placeholder="Password" />
-          
+
           <div class="button-row">
             <button id="login-button" class="mmt-button" type="button">Login</button>
             <button id="logout-button" class="mmt-button hidden" type="button" hidden>Logout</button>
           </div>
         </form>
-      </div>
-  -->
+      </section>
+
+      <section id="frontend-welcome-section">
+      <h2>Welcome</h2>
+      <p>Fill in the form below to get started with our MMT Assessments.</p>
       <form id="settings-form" class="assessment-form" action="#" onsubmit="return false;" onchange="return save_settings();">
 
         <label for="full-name">Full Name</label>
@@ -60,6 +63,7 @@
 
         <button id="button-assessment" tabindex="-1" disabled="true" class="mmt-button hidden">New Assessment</button>
     </form>
+      </section>
     </section>
 
     <section id="panel-assessment" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-assessment" hidden>

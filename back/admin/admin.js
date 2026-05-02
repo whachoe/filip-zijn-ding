@@ -111,6 +111,14 @@ const AdminAPI = {
   },
   getAssessments() {
     return apiRequest('/api/admin/assessments');
+  },
+  getAssessment(assessmentId) {
+    return apiRequest(`/api/admin/assessments/${assessmentId}`);
+  },
+  deleteAssessment(assessmentId) {
+    return apiRequest(`/api/admin/assessments/${assessmentId}`, {
+      method: 'DELETE'
+    });
   }
 };
 
@@ -232,10 +240,147 @@ function renderAssessmentSummary(assessments) {
 
   const recent = assessments.slice(0, 10);
   container.innerHTML = `<p><strong>Total synced assessments:</strong> ${escapeHtml(assessments.length)}</p>
-    <table class="table"><thead><tr><th>ID</th><th>User</th><th>Version</th><th>Created</th></tr></thead><tbody>
-    ${recent.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td></tr>`).join('')}
+    <table class="table"><thead><tr><th>ID</th><th>User</th><th>Version</th><th>Created</th><th>Action</th></tr></thead><tbody>
+    ${recent.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td><td class="inline-actions"><button class="secondary" type="button" onclick="showAdminAssessment('${escapeHtml(item.id)}')">Show</button><button class="secondary" type="button" onclick="deleteAdminAssessment('${escapeHtml(item.id)}')">Delete</button></td></tr>`).join('')}
     </tbody></table>`;
 }
+
+function showAdminAssessment(assessmentId) {
+  document.getElementById('assessment-list-view').classList.add('hidden');
+  const detailView = document.getElementById('assessment-detail-view');
+  detailView.classList.remove('hidden');
+  document.getElementById('assessment-detail-title').textContent = `Assessment ${assessmentId}`;
+  document.getElementById('assessment-meta').innerHTML = '';
+  document.getElementById('assessment-answer-groups').innerHTML = '';
+
+  const statusEl = document.getElementById('assessment-detail-status');
+  statusEl.textContent = 'Loading...';
+  statusEl.className = 'status info';
+
+  AdminAPI.getAssessment(assessmentId)
+    .then((data) => {
+      statusEl.className = 'status hidden';
+      renderAssessmentDetail(data.assessment);
+    })
+    .catch((error) => {
+      statusEl.textContent = error.message || 'Failed to load assessment.';
+      statusEl.className = 'status error';
+    });
+}
+window.showAdminAssessment = showAdminAssessment;
+
+function hideAssessmentDetail() {
+  document.getElementById('assessment-detail-view').classList.add('hidden');
+  document.getElementById('assessment-list-view').classList.remove('hidden');
+}
+
+function parseJsonMaybe(value, fallback) {
+  if (Array.isArray(value) || (value && typeof value === 'object')) {
+    return value;
+  }
+  try {
+    return JSON.parse(value || 'null') || fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function scoreNumeric(v) {
+  const n = Number(v);
+  return n >= 1 && n <= 4 ? n : null;
+}
+
+function scoreDescription(v, indicatorDef) {
+  const n = scoreNumeric(v);
+  if (!n) return 'Not answered';
+  if (!indicatorDef || !Array.isArray(indicatorDef.scores)) return `Score ${n}`;
+  return indicatorDef.scores[n - 1] || `Score ${n}`;
+}
+
+function renderAssessmentDetail(assessmentRow) {
+  const assessment = assessmentRow.data || {};
+  const scores = assessment.scores || {};
+  const categories = parseJsonMaybe(assessmentRow.categories, []);
+  const indicators = parseJsonMaybe(assessmentRow.indicators, []);
+
+  const metaEl = document.getElementById('assessment-meta');
+  const groupsEl = document.getElementById('assessment-answer-groups');
+
+  const contactInfo = assessment.contactInfo || {};
+  const created = assessment.created_at || assessment.created || assessmentRow.created_at;
+
+  metaEl.innerHTML = `
+    <div class="version-item">
+      <strong>Assessment ID:</strong> ${escapeHtml(assessmentRow.id)}<br>
+      <strong>User:</strong> ${escapeHtml(assessmentRow.email || assessmentRow.username || 'Unknown')}<br>
+      <strong>Question Set Version:</strong> ${escapeHtml(assessmentRow.question_set_version || '—')}<br>
+      <strong>Created:</strong> ${escapeHtml(created ? new Date(created).toLocaleString() : '—')}<br>
+      <strong>Contact Name:</strong> ${escapeHtml(contactInfo.fullName || contactInfo.fullname || '—')}<br>
+      <strong>Contact Email:</strong> ${escapeHtml(contactInfo.email || '—')}<br>
+      <strong>Location:</strong> ${escapeHtml(contactInfo.location || '—')}
+    </div>
+  `;
+
+  let groupedHtml = '';
+  categories.forEach((categoryName, categoryIndex) => {
+    const categoryIndicators = indicators[categoryIndex] || [];
+    let rows = '';
+    categoryIndicators.forEach((indicator, indicatorIndex) => {
+      const key = `indicator[${categoryIndex}][${indicatorIndex}]`;
+      const value = scores[key];
+      const n = scoreNumeric(value);
+      const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
+      rows += `<tr><td>${escapeHtml(indicator.name || `Indicator ${indicatorIndex + 1}`)}</td>${scoreCell}<td>${escapeHtml(scoreDescription(value, indicator))}</td></tr>`;
+    });
+    groupedHtml += `
+      <section class="category-box">
+        <h3>${escapeHtml(categoryName || `Category ${categoryIndex + 1}`)}</h3>
+        <table class="table">
+          <thead><tr><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="3">No indicators found for this category.</td></tr>'}</tbody>
+        </table>
+      </section>
+    `;
+  });
+
+  if (!groupedHtml) {
+    const scoredEntries = Object.entries(scores);
+    if (scoredEntries.length) {
+      let rows = '';
+      scoredEntries.forEach(([key, val]) => {
+        const match = String(key).match(/^indicator\[(\d+)\]\[(\d+)\]$/);
+        const catLabel = match ? `Category ${Number(match[1]) + 1}` : 'Unknown';
+        const indLabel = match ? `Indicator ${Number(match[2]) + 1}` : key;
+        const n = scoreNumeric(val);
+        const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
+        rows += `<tr><td>${escapeHtml(catLabel)}</td><td>${escapeHtml(indLabel)}</td>${scoreCell}<td>${escapeHtml(n ? `Score ${n}` : 'Not answered')}</td></tr>`;
+      });
+      groupedHtml = `<section class="category-box"><h3>Answers</h3><table class="table"><thead><tr><th>Category</th><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    } else {
+      groupedHtml = '<p>No answers found for this assessment.</p>';
+    }
+  }
+
+  groupsEl.innerHTML = groupedHtml;
+}
+
+async function deleteAdminAssessment(assessmentId) {
+  const confirmed = window.confirm(`Delete assessment ${assessmentId}? This cannot be undone.`);
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await AdminAPI.deleteAssessment(assessmentId);
+    showAdminMessage('Assessment deleted.', 'success');
+    adminState.loaded.assessments = false;
+    await loadAssessmentsData(true);
+    renderAssessmentSummary(adminState.assessments);
+  } catch (error) {
+    showAdminMessage(error.message || 'Failed to delete assessment.', 'error');
+  }
+}
+window.deleteAdminAssessment = deleteAdminAssessment;
 
 function renderQuestionEditor(questionSet) {
   const container = document.getElementById('admin-question-editor');
@@ -411,6 +556,12 @@ async function activateTab(tabName, forceReload) {
   adminState.activeTab = tabName;
   setActiveTabUI(tabName);
 
+  // Always return to list view when switching tabs
+  if (tabName !== 'assessments') {
+    document.getElementById('assessment-detail-view').classList.add('hidden');
+    document.getElementById('assessment-list-view').classList.remove('hidden');
+  }
+
   try {
     if (tabName === 'users') {
       showAdminMessage('Loading users...', 'info');
@@ -430,7 +581,7 @@ async function activateTab(tabName, forceReload) {
       renderAssessmentSummary(adminState.assessments);
     }
 
-    showAdminMessage('Active tab loaded.', 'success');
+    document.getElementById('admin-message').classList.add('hidden');
   } catch (error) {
     showAdminMessage(error.message || 'Failed to load tab data.', 'error');
   }
@@ -493,6 +644,7 @@ async function bootstrap() {
   document.getElementById('create-user-button').addEventListener('click', () => {
     window.location.href = '/admin/users/new';
   });
+  document.getElementById('assessment-back-button').addEventListener('click', hideAssessmentDetail);
   document.querySelectorAll('.admin-tab').forEach((tabButton) => {
     tabButton.addEventListener('click', () => activateTab(tabButton.dataset.tab, true));
   });
@@ -518,7 +670,9 @@ async function bootstrap() {
 
     setStatus(`Logged in as ${me.user.email || me.user.username}`, 'success');
     setAuthenticatedUI(true);
-    await activateTab('users', true);
+    const hashTab = window.location.hash.replace('#', '');
+    const validTabs = ['users', 'question-versions', 'question-editor', 'assessments'];
+    await activateTab(validTabs.includes(hashTab) ? hashTab : 'users', true);
     if (flashMessage) {
       showAdminMessage(flashMessage.text, flashMessage.type);
       flashMessage = null;

@@ -41,8 +41,20 @@ function generateRandomDate(from, to) {
 function updateTotalRecords() {
   const totalRecordsEl = document.getElementById('total_records');
   if(totalRecordsEl) {
-      const records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
-      totalRecordsEl.textContent = records.length;
+    let records = JSON.parse(localStorage.getItem('assessment_list') || '[]');
+    if (!Array.isArray(records)) {
+      records = [];
+    }
+
+    // Keep only unique IDs that still exist in localStorage.
+    const normalized = [...new Set(records)].filter((id) => !!localStorage.getItem(id));
+
+    // Self-heal stale list entries so other features use consistent data.
+    if (normalized.length !== records.length) {
+      localStorage.setItem('assessment_list', JSON.stringify(normalized));
+    }
+
+    totalRecordsEl.textContent = normalized.length;
   }
   
   // Also update sync status if function exists
@@ -90,6 +102,8 @@ function updateAuthUI() {
   const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
   const loginButton = document.getElementById('login-button');
   const logoutButton = document.getElementById('logout-button');
+  const loginSection = document.getElementById('frontend-login-section');
+  const welcomeSection = document.getElementById('frontend-welcome-section');
 
   if (user) {
     setAuthStatus(`Logged in as ${user.email || user.username}`, 'success');
@@ -99,12 +113,28 @@ function updateAuthUI() {
       logoutButton.removeAttribute('hidden');
       logoutButton.classList.remove('hidden');
     }
+    if (loginSection) {
+      loginSection.hidden = true;
+      loginSection.classList.add('hidden');
+    }
+    if (welcomeSection) {
+      welcomeSection.hidden = false;
+      welcomeSection.classList.remove('hidden');
+    }
   } else {
     setAuthStatus('Not logged in.', 'info');
     if (logoutButton) {
       logoutButton.hidden = true;
       logoutButton.setAttribute('hidden', 'hidden');
       logoutButton.classList.add('hidden');
+    }
+    if (loginSection) {
+      loginSection.hidden = false;
+      loginSection.classList.remove('hidden');
+    }
+    if (welcomeSection) {
+      welcomeSection.hidden = true;
+      welcomeSection.classList.add('hidden');
     }
   }
 
@@ -190,6 +220,24 @@ window.updateAuthUI = updateAuthUI;
     if(panel){ panel.hidden = false; panel.classList.remove('hidden'); }
     tab.focus();
   }
+
+  window.openFrontendLoginScreen = function() {
+    const homeTab = document.getElementById('tab-home');
+    const loginSection = document.getElementById('frontend-login-section');
+    const emailField = document.getElementById('auth-email');
+
+    if (homeTab) {
+      activateTab(homeTab);
+    }
+
+    if (loginSection && typeof loginSection.scrollIntoView === 'function') {
+      loginSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    if (emailField) {
+      emailField.focus();
+    }
+  };
 
   tabs.forEach((tab, idx)=>{
     tab.addEventListener('click', ()=> {

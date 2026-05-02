@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MMT Admin - Assessment</title>
+  <link rel="stylesheet" href="/admin-assets/admin.css">
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+      <div class="page-header-row">
+        <h1 id="assessment-page-title">Assessment</h1>
+        <button id="logout-button" type="button">Logout</button>
+      </div>
+      <p>Detailed assessment answers grouped by category.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div id="assessment-status" class="status info">Loading assessment...</div>
+      <div class="actions">
+        <button id="back-button" class="secondary" type="button">Back to Admin</button>
+      </div>
+      <div id="assessment-meta" class="assessment-meta"></div>
+      <div id="assessment-answer-groups"></div>
+    </section>
+  </main>
+
+  <script src="/admin-assets/assessment-view.js" defer></script>
+</body>
+</html>

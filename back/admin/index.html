@@ -69,9 +69,22 @@
       </section>
 
       <section id="panel-assessments" class="admin-panel hidden" role="tabpanel" aria-labelledby="tab-assessments" hidden>
-        <section class="card full-width">
+        <!-- List view -->
+        <section id="assessment-list-view" class="card full-width">
           <h2>Synced Assessments</h2>
           <div id="admin-assessment-summary">No data loaded.</div>
+        </section>
+        <!-- Detail view -->
+        <section id="assessment-detail-view" class="hidden">
+          <section class="card full-width">
+            <div class="card-title-row">
+              <h2 id="assessment-detail-title">Assessment</h2>
+              <button id="assessment-back-button" class="secondary" type="button">Back to list</button>
+            </div>
+            <div id="assessment-detail-status" class="status info hidden"></div>
+            <div id="assessment-meta"></div>
+            <div id="assessment-answer-groups"></div>
+          </section>
         </section>
       </section>
     </section>

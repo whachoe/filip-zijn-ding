@@ -79,15 +79,16 @@ async function updateSyncStatus() {
   if (syncButton) {
     const isLoggedIn = typeof window.isLoggedIn === 'function' ? window.isLoggedIn() : false;
     const canSync = serverOnline && isLoggedIn && syncStatus.pending > 0 && !syncStatus.isSyncing;
-    
-    syncButton.disabled = !canSync;
+
+    // Keep login CTA clickable when unauthenticated.
+    syncButton.disabled = isLoggedIn ? !canSync : false;
     
     if (syncStatus.isSyncing) {
       syncButton.textContent = 'Syncing...';
     } else if (!serverOnline) {
       syncButton.textContent = 'Server Offline';
     } else if (!isLoggedIn) {
-      syncButton.textContent = 'Login Required';
+      syncButton.textContent = 'Login required';
     } else if (syncStatus.pending === 0) {
       syncButton.textContent = 'All Synced';
     } else {
@@ -244,6 +245,13 @@ function initSync() {
   const syncButton = document.getElementById('sync-button');
   if (syncButton) {
     syncButton.addEventListener('click', async () => {
+      const isLoggedIn = typeof window.isLoggedIn === 'function' ? window.isLoggedIn() : false;
+      if (!isLoggedIn) {
+        if (typeof window.openFrontendLoginScreen === 'function') {
+          window.openFrontendLoginScreen();
+        }
+        return;
+      }
       await syncAssessments();
     });
   }
