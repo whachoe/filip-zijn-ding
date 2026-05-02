@@ -102,6 +102,7 @@ async function bootstrap() {
     const location = document.getElementById('user-location').value.trim();
     const email = document.getElementById('user-email').value.trim();
     const password = document.getElementById('user-password').value;
+    const password2 = document.getElementById('user-password2').value;
     const role = document.getElementById('user-role').value;
 
     if (!email) {
@@ -111,6 +112,12 @@ async function bootstrap() {
 
     if (isCreate && !password) {
       setStatus('Password is required.', 'warning');
+      return;
+    }
+
+    if (password && password !== password2) {
+      setStatus('Passwords do not match.', 'warning');
+      document.getElementById('user-password2').focus();
       return;
     }
 
