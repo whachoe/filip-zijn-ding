@@ -676,7 +676,10 @@
         if (incompleteAssessment) {
             // Resume incomplete assessment
             currentAssessmentId = incompleteAssessment.id;
-            currentQuestionIndex = incompleteAssessment.progress.currentQuestionIndex || 0;
+            const savedIndex = incompleteAssessment.progress && typeof incompleteAssessment.progress.currentQuestionIndex === 'number'
+                ? incompleteAssessment.progress.currentQuestionIndex
+                : 0;
+            currentQuestionIndex = getResumeQuestionIndex(incompleteAssessment, savedIndex);
         } else {
             // Start new assessment
             currentAssessmentId = create_assessment_id();
@@ -713,8 +716,8 @@
     }
     
     function findIncompleteAssessment() {
-        // Check assessment list for any incomplete assessments
-        const assessmentList = JSON.parse(localStorage.getItem('assessment_list') || '[]');
+        // Check all known assessment IDs for any incomplete assessments.
+        const assessmentList = getAssessmentIdsNewestFirst();
         
         for (let id of assessmentList) {
             const data = localStorage.getItem(id);
@@ -731,14 +734,110 @@
     }
     
     function startNewAssessment() {
-        // Force start a completely fresh assessment
-        currentAssessmentId = create_assessment_id();
-        currentQuestionIndex = 0;
+        // Prefer resuming latest unsynced assessment; otherwise start fresh.
+        const unsyncedAssessment = findLatestUnsyncedAssessment();
+        if (unsyncedAssessment) {
+            currentAssessmentId = unsyncedAssessment.id;
+            const savedIndex = unsyncedAssessment.progress && typeof unsyncedAssessment.progress.currentQuestionIndex === 'number'
+                ? unsyncedAssessment.progress.currentQuestionIndex
+                : 0;
+            currentQuestionIndex = getResumeQuestionIndex(unsyncedAssessment, savedIndex);
+        } else {
+            currentAssessmentId = create_assessment_id();
+            currentQuestionIndex = 0;
+        }
         
         // Render fresh state
         renderQuestion(currentQuestionIndex);
         updateProgressBar();
         updateNavigationButtons();
+    }
+
+    function getResumeQuestionIndex(assessment, fallbackIndex) {
+        const firstUnanswered = findFirstUnansweredQuestionIndex(assessment);
+        if (firstUnanswered !== -1) {
+            return firstUnanswered;
+        }
+
+        if (typeof fallbackIndex === 'number' && fallbackIndex >= 0 && fallbackIndex < allQuestions.length) {
+            return fallbackIndex;
+        }
+
+        return 0;
+    }
+
+    function findFirstUnansweredQuestionIndex(assessment) {
+        const scores = assessment && assessment.scores ? assessment.scores : {};
+
+        for (let i = 0; i < allQuestions.length; i++) {
+            const question = allQuestions[i];
+            const fieldName = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
+            const answer = scores[fieldName];
+
+            if (answer === undefined || answer === null || answer === '') {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function findLatestUnsyncedAssessment() {
+        const assessmentList = getAssessmentIdsNewestFirst();
+
+        for (let i = assessmentList.length - 1; i >= 0; i--) {
+            const id = assessmentList[i];
+            const data = localStorage.getItem(id);
+            if (!data) continue;
+
+            try {
+                const assessment = JSON.parse(data);
+                if (assessment && assessment.synced === false) {
+                    return assessment;
+                }
+            } catch (error) {
+                // Ignore malformed items and continue scanning.
+            }
+        }
+
+        return null;
+    }
+
+    function getAssessmentIdsNewestFirst() {
+        let assessmentList = [];
+
+        try {
+            const parsed = JSON.parse(localStorage.getItem('assessment_list') || '[]');
+            if (Array.isArray(parsed)) {
+                assessmentList = parsed;
+            }
+        } catch (error) {
+            assessmentList = [];
+        }
+
+        // Include draft IDs that may exist in localStorage but are missing from assessment_list.
+        // Assessment IDs follow: assessment_YYYYMMDD_HHMMSS.
+        const assessmentIdPattern = /^assessment_\d{8}_\d{6}$/;
+        const discoveredIds = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && assessmentIdPattern.test(key)) {
+                discoveredIds.push(key);
+            }
+        }
+
+        const seen = {};
+        const merged = [];
+        const combined = assessmentList.concat(discoveredIds).sort();
+        for (let i = combined.length - 1; i >= 0; i--) {
+            const id = combined[i];
+            if (!seen[id]) {
+                seen[id] = true;
+                merged.push(id);
+            }
+        }
+
+        return merged;
     }
 
     function getAssessmentProgress() {
