@@ -539,6 +539,10 @@
     let currentQuestionIndex = 0;
     let allQuestions = [];
     let currentAssessmentId = null;
+    let swipeBoundElement = null;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipeStartTime = 0;
 
     function generate_assessment_form(categories, indicators) {
         allQuestions = buildQuestionList(categories, indicators);
@@ -670,6 +674,65 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function bindSwipeNavigation() {
+        const questionContainer = document.getElementById('question-container');
+        if (!questionContainer) return;
+
+        if (swipeBoundElement === questionContainer) {
+            return;
+        }
+
+        if (swipeBoundElement) {
+            swipeBoundElement.removeEventListener('touchstart', handleSwipeTouchStart);
+            swipeBoundElement.removeEventListener('touchend', handleSwipeTouchEnd);
+            swipeBoundElement.removeEventListener('touchcancel', handleSwipeTouchCancel);
+        }
+
+        swipeBoundElement = questionContainer;
+        swipeBoundElement.addEventListener('touchstart', handleSwipeTouchStart, { passive: true });
+        swipeBoundElement.addEventListener('touchend', handleSwipeTouchEnd, { passive: true });
+        swipeBoundElement.addEventListener('touchcancel', handleSwipeTouchCancel, { passive: true });
+    }
+
+    function handleSwipeTouchStart(event) {
+        if (!event.touches || event.touches.length !== 1) return;
+
+        swipeStartX = event.touches[0].clientX;
+        swipeStartY = event.touches[0].clientY;
+        swipeStartTime = Date.now();
+    }
+
+    function handleSwipeTouchEnd(event) {
+        if (!event.changedTouches || event.changedTouches.length === 0) return;
+
+        const endX = event.changedTouches[0].clientX;
+        const endY = event.changedTouches[0].clientY;
+        const deltaX = endX - swipeStartX;
+        const deltaY = endY - swipeStartY;
+        const elapsed = Date.now() - swipeStartTime;
+
+        const minHorizontalDistance = 60;
+        const maxVerticalDistance = 50;
+        const maxDurationMs = 800;
+
+        if (Math.abs(deltaX) < minHorizontalDistance) return;
+        if (Math.abs(deltaY) > maxVerticalDistance) return;
+        if (elapsed > maxDurationMs) return;
+
+        if (deltaX < 0) {
+            navigateToQuestion(currentQuestionIndex + 1);
+            return;
+        }
+
+        navigateToQuestion(currentQuestionIndex - 1);
+    }
+
+    function handleSwipeTouchCancel() {
+        swipeStartX = 0;
+        swipeStartY = 0;
+        swipeStartTime = 0;
+    }
+
     function initAssessmentNavigation() {
         // Look for any incomplete assessment in localStorage
         const incompleteAssessment = findIncompleteAssessment();
@@ -719,6 +782,8 @@
         document.getElementById('finish-btn').addEventListener('click', () => {
             save_assessment();
         });
+
+        bindSwipeNavigation();
     }
     
     function findIncompleteAssessment() {
