@@ -584,7 +584,12 @@ function renderAssessmentDetail(assessmentRow) {
     groupedHtml += `
       <section class="category-box">
         <h3>${escapeHtml(categoryName || `Category ${categoryIndex + 1}`)}</h3>
-        <table class="table">
+        <table class="table assessment-answer-table">
+          <colgroup>
+            <col class="assessment-answer-col-indicator">
+            <col class="assessment-answer-col-score">
+            <col class="assessment-answer-col-answer">
+          </colgroup>
           <thead><tr><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th></tr></thead>
           <tbody>${rows || '<tr><td colspan="3">No indicators found for this category.</td></tr>'}</tbody>
         </table>

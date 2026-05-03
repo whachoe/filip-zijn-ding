@@ -344,6 +344,28 @@ button.danger {
   gap: 0.35rem;
 }
 
+.assessment-answer-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.assessment-answer-col-indicator {
+  width: 36%;
+}
+
+.assessment-answer-col-score {
+  width: 5.5rem;
+}
+
+.assessment-answer-col-answer {
+  width: auto;
+}
+
+.assessment-answer-table th,
+.assessment-answer-table td {
+  overflow-wrap: anywhere;
+}
+
 .score-cell {
   width: 4rem;
   text-align: center;
