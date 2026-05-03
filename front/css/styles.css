@@ -447,3 +447,88 @@ canvas#bar-graph {
     margin-right: auto;
   }
 }
+
+/* ── Upload screen ──────────────────────────────────────── */
+.upload-screen {
+  padding: 1.5rem 0;
+}
+
+.upload-screen h2 {
+  color: var(--title);
+  margin-bottom: 0.5rem;
+}
+
+.upload-screen p {
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+.upload-status {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  font-weight: 500;
+  min-height: 1.5rem;
+}
+
+.upload-status.info  { background: rgba(121,196,193,0.12); color: var(--accent); border: 1px solid rgba(121,196,193,0.3); }
+.upload-status.success { background: rgba(51,153,0,0.15);  color: var(--warning5); border: 1px solid rgba(51,153,0,0.3); }
+.upload-status.warning { background: rgba(255,204,0,0.15); color: var(--warning3); border: 1px solid rgba(255,204,0,0.3); }
+.upload-status.error   { background: rgba(204,51,0,0.15);  color: var(--warning1); border: 1px solid rgba(204,51,0,0.3); }
+
+.upload-sync-notice {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  min-height: 1.2rem;
+}
+
+.upload-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.upload-input-row input[type="file"] {
+  flex: 1 1 auto;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.upload-input-row .mmt-button {
+  flex: 0 0 auto;
+  width: auto;
+  margin-top: 0;
+  padding: 0.6rem 1.2rem;
+}
+
+.upload-results {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+}
+
+.upload-results li {
+  padding: 0.35rem 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.upload-results li.upload-ok   { color: var(--warning5); }
+.upload-results li.upload-fail { color: var(--warning1); }
+
+.upload-actions .mmt-button.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.upload-actions .mmt-button.secondary:hover {
+  background: rgba(121,196,193,0.1);
+}

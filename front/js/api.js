@@ -151,10 +151,37 @@ const QuestionAPI = {
   }
 };
 
+// Media API – uploads one file at a time (backend accepts single file per request)
+const MediaAPI = {
+  async upload(file, assessmentId) {
+    const token = getToken();
+    const formData = new FormData();
+    // assessmentId MUST be appended before the file so multer can read it
+    // from req.body inside the destination callback (multipart fields are
+    // parsed in stream order).
+    formData.append('assessmentId', assessmentId);
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/media`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || `Upload failed: ${response.status}`);
+    }
+
+    return data;
+  }
+};
+
 if (typeof window !== 'undefined') {
   window.AuthAPI = AuthAPI;
   window.AssessmentAPI = AssessmentAPI;
   window.QuestionAPI = QuestionAPI;
+  window.MediaAPI = MediaAPI;
 }
 
 // Export functions

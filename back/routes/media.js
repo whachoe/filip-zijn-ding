@@ -14,11 +14,29 @@ if (!fs.existsSync(uploadDir)) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    // req.user is set by authenticateToken middleware (JWT already verified).
+    // req.body.assessmentId is available here only if the client sends text fields
+    // before the file part in the multipart body (guaranteed by the frontend).
+    const userId = req.user.id;
+    const assessmentId = req.body.assessmentId || 'unknown';
+    const subDir = path.join(uploadDir, `${userId}_${assessmentId}`);
+    fs.mkdirSync(subDir, { recursive: true });
+    cb(null, subDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext);
+    // destination is already created by the time filename runs
+    const userId = req.user.id;
+    const assessmentId = req.body.assessmentId || 'unknown';
+    const dir = path.join(uploadDir, `${userId}_${assessmentId}`);
+    let name = base + ext;
+    let counter = 1;
+    while (fs.existsSync(path.join(dir, name))) {
+      name = `${base}(${counter})${ext}`;
+      counter++;
+    }
+    cb(null, name);
   }
 });
 
@@ -28,15 +46,15 @@ const upload = multer({
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 104857600 // 100MB default
   },
   fileFilter: (req, file, cb) => {
-    // Allow images and PDFs
-    const allowedTypes = /jpeg|jpg|png|gif|pdf/;
+    // Allow images and PDFs and zips
+    const allowedTypes = /jpeg|jpg|png|gif|pdf|zip/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
 
     if (extname && mimetype) {
       return cb(null, true);
     } else {
-      cb(new Error('Only images and PDFs are allowed'));
+      cb(new Error('Only images,PDFs and ZIP files are allowed'));
     }
   }
 });

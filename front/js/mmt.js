@@ -578,6 +578,7 @@
         
         const question = allQuestions[index];
         const questionContainer = document.getElementById('question-container');
+        if (!questionContainer) return;
         const fieldName = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
         
         let html = `
@@ -691,25 +692,30 @@
         updateProgressBar();
         updateNavigationButtons();
         
-        // Attach event listeners (remove old ones first)
+        bindAssessmentNavigationHandlers();
+    }
+
+    function bindAssessmentNavigationHandlers() {
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const finishBtn = document.getElementById('finish-btn');
-        
+
+        if (!prevBtn || !nextBtn || !finishBtn) return;
+
         // Clone and replace to remove old listeners
         prevBtn.replaceWith(prevBtn.cloneNode(true));
         nextBtn.replaceWith(nextBtn.cloneNode(true));
         finishBtn.replaceWith(finishBtn.cloneNode(true));
-        
+
         // Add new listeners
         document.getElementById('prev-btn').addEventListener('click', () => {
             navigateToQuestion(currentQuestionIndex - 1);
         });
-        
+
         document.getElementById('next-btn').addEventListener('click', () => {
             navigateToQuestion(currentQuestionIndex + 1);
         });
-        
+
         document.getElementById('finish-btn').addEventListener('click', () => {
             save_assessment();
         });
@@ -734,6 +740,14 @@
     }
     
     function startNewAssessment() {
+        const wrapper = document.getElementById('new_assessment_wrapper');
+
+        // If the upload screen replaced the assessment DOM, rebuild it first.
+        if (!document.getElementById('question-container') && wrapper) {
+            wrapper.innerHTML = generate_assessment_form(categories, indicators);
+            bindAssessmentNavigationHandlers();
+        }
+
         // Prefer resuming latest unsynced assessment; otherwise start fresh.
         const unsyncedAssessment = findLatestUnsyncedAssessment();
         if (unsyncedAssessment) {
@@ -1146,16 +1160,156 @@
             updateTotalRecords();
         }
 
+        // Capture finished assessment ID before clearing module state
+        var finishedId = currentAssessmentId;
+
         // Reset for next assessment
         currentAssessmentId = null;
         currentQuestionIndex = 0;
 
-        // Redirect to reports panel
-        refreshReports();
-        u('button#tab-reports').trigger('click');
+        // Show upload screen instead of immediately going to reports
+        showUploadScreen(finishedId);
     }
 
-    function create_random_assessment(indicators) {
+    function showUploadScreen(finishedAssessmentId) {
+        var wrapper = document.getElementById('new_assessment_wrapper');
+        wrapper.innerHTML = [
+            '<div id="upload-screen" class="upload-screen">',
+            '  <h2>Upload Supporting Media</h2>',
+            '  <p>Attach photos, PDFs or other documents to your assessment.</p>',
+            '  <div id="upload-status" class="upload-status"></div>',
+            '  <div id="upload-sync-notice" class="upload-sync-notice"></div>',
+            '  <div class="upload-input-row">',
+            '    <input id="upload-file-input" type="file" multiple accept="image/*,.pdf">',
+            '    <button id="upload-btn" class="mmt-button" disabled>Upload files</button>',
+            '  </div>',
+            '  <ul id="upload-results" class="upload-results"></ul>',
+            '  <div class="upload-actions">',
+            '    <button id="upload-skip-btn" class="mmt-button secondary">Skip &ndash; go to Reports</button>',
+            '  </div>',
+            '</div>'
+        ].join('');
+
+        var fileInput = document.getElementById('upload-file-input');
+        var uploadBtn = document.getElementById('upload-btn');
+        var skipBtn = document.getElementById('upload-skip-btn');
+        var statusEl = document.getElementById('upload-status');
+        var syncNotice = document.getElementById('upload-sync-notice');
+        var resultsList = document.getElementById('upload-results');
+
+        function goToReports() {
+            refreshReports();
+            u('button#tab-reports').trigger('click');
+        }
+
+        function setStatus(msg, type) {
+            statusEl.textContent = msg;
+            statusEl.className = 'upload-status ' + (type || 'info');
+        }
+
+        skipBtn.addEventListener('click', goToReports);
+
+        fileInput.addEventListener('change', function() {
+            uploadBtn.disabled = fileInput.files.length === 0;
+        });
+
+        uploadBtn.addEventListener('click', function() {
+            uploadBtn.disabled = true;
+            fileInput.disabled = true;
+            skipBtn.disabled = true;
+            setStatus('', '');
+            syncNotice.textContent = '';
+
+            var assessment = finishedAssessmentId
+                ? JSON.parse(localStorage.getItem(finishedAssessmentId) || 'null')
+                : null;
+
+            if (!assessment) {
+                setStatus('Assessment not found in local storage.', 'error');
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+                skipBtn.disabled = false;
+                return;
+            }
+
+            var doUpload = function(dbAssessmentId) {
+                var files = Array.prototype.slice.call(fileInput.files);
+                var done = 0;
+                var failed = 0;
+
+                function uploadNext(idx) {
+                    if (idx >= files.length) {
+                        var msg = done + ' file(s) uploaded';
+                        if (failed > 0) msg += ', ' + failed + ' failed';
+                        setStatus(msg, failed > 0 ? 'warning' : 'success');
+                        fileInput.disabled = false;
+                        fileInput.value = '';
+                        uploadBtn.disabled = true;
+                        skipBtn.disabled = false;
+                        return;
+                    }
+
+                    var file = files[idx];
+                    var li = document.createElement('li');
+                    li.textContent = file.name + ' …';
+                    resultsList.appendChild(li);
+
+                    MediaAPI.upload(file, dbAssessmentId)
+                        .then(function(resp) {
+                            done++;
+                            li.textContent = '✓ ' + file.name;
+                            li.className = 'upload-ok';
+                            // Store media reference locally
+                            var stored = JSON.parse(localStorage.getItem(finishedAssessmentId) || '{}');
+                            if (!Array.isArray(stored.mediaAttachments)) stored.mediaAttachments = [];
+                            stored.mediaAttachments.push(resp.media);
+                            localStorage.setItem(finishedAssessmentId, JSON.stringify(stored));
+                        })
+                        .catch(function(err) {
+                            failed++;
+                            li.textContent = '✗ ' + file.name + ' – ' + (err.message || 'Upload failed');
+                            li.className = 'upload-fail';
+                        })
+                        .then(function() {
+                            uploadNext(idx + 1);
+                        });
+                }
+
+                setStatus('Uploading…', 'info');
+                uploadNext(0);
+            };
+
+            // Ensure the assessment is synced before uploading media
+            if (assessment.synced && assessment.syncedAt) {
+                // Already synced – the local ID is the DB primary key
+                doUpload(finishedAssessmentId);
+            } else {
+                syncNotice.textContent = 'Syncing assessment to server before uploading…';
+                if (typeof syncAssessments === 'function') {
+                    syncAssessments().then(function(result) {
+                        if (!result.success) {
+                            syncNotice.textContent = '';
+                            setStatus('Could not sync assessment. Please sync first, then retry.', 'error');
+                            uploadBtn.disabled = false;
+                            fileInput.disabled = false;
+                            skipBtn.disabled = false;
+                            return;
+                        }
+                        syncNotice.textContent = 'Synced. Uploading files…';
+                        doUpload(finishedAssessmentId);
+                    });
+                } else {
+                    syncNotice.textContent = '';
+                    setStatus('Sync not available. Please log in and sync before uploading.', 'warning');
+                    uploadBtn.disabled = false;
+                    fileInput.disabled = false;
+                    skipBtn.disabled = false;
+                }
+            }
+        });
+    }
+
+    function create_random_assessment(indicators) { // eslint-disable-line no-unused-vars
         const curDate = generateRandomDate(new Date(2023, 0, 1), new Date());
         let assessmentId = create_assessment_id(curDate);
         let scores = {};
