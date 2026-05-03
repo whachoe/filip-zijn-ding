@@ -49,10 +49,5 @@ CREATE INDEX IF NOT EXISTS idx_assessments_created_at ON assessments(created_at)
 CREATE INDEX IF NOT EXISTS idx_media_assessment_id ON media(assessment_id);
 CREATE INDEX IF NOT EXISTS idx_question_sets_version ON question_sets(version);
 
--- Insert default admin user (password: admin123)
-INSERT INTO users (username, password_hash, email, role) 
-VALUES ('admin', '$2b$10$g8V8nQi.PS/vuxdas/23SuL8PLy8gvqknaJOSOejtXMx6T0fTUpBK', 'admin@example.com', 'admin')
-ON CONFLICT (username) DO NOTHING;
-
 -- Insert initial question set (version 1) - this will be populated from the frontend data
 -- You'll need to run a separate migration or admin API call to populate this
