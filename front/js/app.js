@@ -1,5 +1,5 @@
 function save_settings() {
-    // Check if all 3 fields in the form are filled in and if so: enable the "New Assessment" tab
+    // Check if all 3 fields in the form are filled in and if so: enable the "Assessment" tab
     const fullName = document.getElementById('fullName').value.trim();
     const email = document.getElementById('email').value.trim();
     const location = document.getElementById('location').value;
@@ -324,7 +324,7 @@ window.updateAuthUI = updateAuthUI;
       document.getElementById('email').value = info.email || '';
       document.getElementById('location').value = info.location || '';
 
-      // Check if all 3 fields in the form are filled in and if so: enable the "New Assessment" tab
+      // Check if all 3 fields in the form are filled in and if so: enable the "Assessment" tab
       save_settings();
   }
 

@@ -273,7 +273,7 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
 
   await page.getByLabel('Full Name').fill('QA Runner');
   await page.getByLabel('Location').fill('Test Lab');
-  await page.getByRole('tab', { name: 'New Assessment' }).click();
+  await page.getByRole('tab', { name: 'Assessment' }).click();
   await expect(page.locator('#progress-text')).toHaveText(/Question 1 of/);
   await expect(page.locator('#question-container')).toBeVisible();
 
