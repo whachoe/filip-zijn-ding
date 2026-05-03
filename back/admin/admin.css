@@ -153,6 +153,49 @@ h3 {
   gap: 0.5rem;
 }
 
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.pager-numbers {
+  display: flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.pager-number {
+  color: var(--accent);
+  text-decoration: none;
+  padding: 0 0.1rem;
+  line-height: 1;
+}
+
+.pager-number.is-active,
+.pager-number[aria-current='page'] {
+  color: #115874;
+  font-weight: 700;
+}
+
+.pager-number.is-active:hover,
+.pager-number[aria-current='page']:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.pager-number:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.pager-ellipsis {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 input, textarea, select, button {
   font: inherit;
   font-size: var(--font-size);

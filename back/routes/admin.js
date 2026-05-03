@@ -316,20 +316,46 @@ router.put('/questions/:id', async (req, res) => {
 router.get('/assessments', async (req, res) => {
   try {
     const full = req.query.full === 'true';
-    const query = full
-      ? `SELECT a.id, a.user_id, u.username, u.email, a.data, a.question_set_version,
+    if (full) {
+      const result = await db.query(
+        `SELECT a.id, a.user_id, u.username, u.email, a.data, a.question_set_version,
                 a.created_at, a.synced_at, q.categories, q.indicators
          FROM assessments a
          JOIN users u ON a.user_id = u.id
          LEFT JOIN question_sets q ON q.version = a.question_set_version
          ORDER BY a.created_at DESC`
-      : `SELECT a.id, a.user_id, u.username, u.email, a.question_set_version, a.created_at, a.synced_at
-         FROM assessments a
-         JOIN users u ON a.user_id = u.id
-         ORDER BY a.created_at DESC`;
+      );
 
-    const result = await db.query(query);
-    res.json({ assessments: result.rows });
+      return res.json({ assessments: result.rows });
+    }
+
+    const requestedPage = parseInt(req.query.page, 10);
+    const requestedLimit = parseInt(req.query.limit, 10);
+    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 100) : 10;
+    const offset = (page - 1) * limit;
+
+    const countResult = await db.query('SELECT COUNT(*)::int AS total FROM assessments');
+    const total = countResult.rows[0] ? countResult.rows[0].total : 0;
+
+    const result = await db.query(
+      `SELECT a.id, a.user_id, u.username, u.email, a.question_set_version, a.created_at, a.synced_at
+       FROM assessments a
+       JOIN users u ON a.user_id = u.id
+       ORDER BY a.created_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    res.json({
+      assessments: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: total > 0 ? Math.ceil(total / limit) : 0
+      }
+    });
   } catch (error) {
     console.error('Get all assessments error:', error);
     res.status(500).json({ error: 'Failed to get assessments' });

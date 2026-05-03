@@ -109,8 +109,11 @@ const AdminAPI = {
       body: JSON.stringify({ categories, indicators })
     });
   },
-  getAssessments() {
-    return apiRequest('/api/admin/assessments');
+  getAssessments(page, limit) {
+    const params = new URLSearchParams();
+    params.set('page', String(page || 1));
+    params.set('limit', String(limit || 10));
+    return apiRequest(`/api/admin/assessments?${params.toString()}`);
   },
   getAssessmentsExport() {
     return apiRequest('/api/admin/assessments?full=true');
@@ -130,6 +133,12 @@ let adminState = {
   questionSets: [],
   latestQuestionSet: null,
   assessments: [],
+  assessmentsPagination: {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  },
   loaded: {
     users: false,
     questionSets: false,
@@ -280,18 +289,85 @@ function renderQuestionVersions(questionSets) {
   container.innerHTML = `<div class="version-list">${questionSets.map((set) => `<div class="version-item"><strong>Version ${escapeHtml(set.version)}</strong><br><span>${escapeHtml(new Date(set.created_at).toLocaleString())}</span><br><small>${escapeHtml(set.categories.length)} categories</small></div>`).join('')}</div>`;
 }
 
-function renderAssessmentSummary(assessments) {
+function buildPagerItems(page, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = [1, 2, totalPages - 1, totalPages];
+  const middleCandidates = [page - 1, page, page + 1];
+
+  middleCandidates.forEach((item) => {
+    if (item > 2 && item < totalPages - 1) {
+      pages.push(item);
+    }
+  });
+
+  const uniquePages = Array.from(new Set(pages)).sort((left, right) => left - right);
+  const items = [];
+
+  uniquePages.forEach((item, index) => {
+    if (index > 0 && item - uniquePages[index - 1] > 1) {
+      items.push('ellipsis');
+    }
+    items.push(item);
+  });
+
+  return items;
+}
+
+function renderPagerNumbers(page, totalPages) {
+  const items = buildPagerItems(page, totalPages);
+
+  return `<div class="pager-numbers">${items.map((item, index) => {
+    if (item === 'ellipsis') {
+      return `<span class="pager-ellipsis" aria-hidden="true" data-ellipsis-index="${index}">...</span>`;
+    }
+
+    const isCurrent = item === page;
+    return `<a href="#" class="pager-number${isCurrent ? ' is-active' : ''}" data-page="${item}" ${isCurrent ? 'aria-current="page"' : ''}>${item}</a>`;
+  }).join('')}</div>`;
+}
+
+function renderAssessmentSummary(assessments, pagination) {
   const container = document.getElementById('admin-assessment-summary');
+  const page = pagination && pagination.page ? pagination.page : 1;
+  const total = pagination && typeof pagination.total === 'number' ? pagination.total : assessments.length;
+  const totalPages = pagination && typeof pagination.totalPages === 'number' ? pagination.totalPages : (assessments.length ? 1 : 0);
+
   if (!assessments.length) {
     container.innerHTML = '<p>No synced assessments found.</p>';
     return;
   }
 
-  const recent = assessments.slice(0, 10);
-  container.innerHTML = `<p><strong>Total synced assessments:</strong> ${escapeHtml(assessments.length)}</p>
+  container.innerHTML = `<p><strong>Total synced assessments:</strong> ${escapeHtml(total)}</p>
     <table class="table"><thead><tr><th>ID</th><th>User</th><th>Version</th><th>Created</th><th>Action</th></tr></thead><tbody>
-    ${recent.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td><td class="inline-actions"><button class="secondary" type="button" onclick="showAdminAssessment('${escapeHtml(item.id)}')">Show</button><button class="secondary" type="button" onclick="deleteAdminAssessment('${escapeHtml(item.id)}')">Delete</button></td></tr>`).join('')}
-    </tbody></table>`;
+    ${assessments.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td><td class="inline-actions"><button class="secondary" type="button" onclick="showAdminAssessment('${escapeHtml(item.id)}')">Show</button><button class="secondary" type="button" onclick="deleteAdminAssessment('${escapeHtml(item.id)}')">Delete</button></td></tr>`).join('')}
+    </tbody></table>
+    <div class="pager" aria-label="Assessment pagination">
+      <button id="assessment-page-prev" class="secondary" type="button" ${page <= 1 ? 'disabled' : ''}>Previous</button>
+      ${renderPagerNumbers(page, totalPages || 1)}
+      <button id="assessment-page-next" class="secondary" type="button" ${!totalPages || page >= totalPages ? 'disabled' : ''}>Next</button>
+    </div>`;
+
+  const prevBtn = document.getElementById('assessment-page-prev');
+  const nextBtn = document.getElementById('assessment-page-next');
+  const pageButtons = container.querySelectorAll('.pager-number[data-page]');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => goToAssessmentPage(page - 1));
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => goToAssessmentPage(page + 1));
+  }
+
+  pageButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      goToAssessmentPage(parseInt(button.dataset.page, 10));
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -547,8 +623,8 @@ async function deleteAdminAssessment(assessmentId) {
     await AdminAPI.deleteAssessment(assessmentId);
     showAdminMessage('Assessment deleted.', 'success');
     adminState.loaded.assessments = false;
-    await loadAssessmentsData(true);
-    renderAssessmentSummary(adminState.assessments);
+    await loadAssessmentsData(true, adminState.assessmentsPagination.page);
+    renderAssessmentSummary(adminState.assessments, adminState.assessmentsPagination);
   } catch (error) {
     showAdminMessage(error.message || 'Failed to delete assessment.', 'error');
   }
@@ -716,13 +792,38 @@ async function loadQuestionSetsData(force) {
   adminState.loaded.questionSets = true;
 }
 
-async function loadAssessmentsData(force) {
+async function loadAssessmentsData(force, page) {
   if (!force && adminState.loaded.assessments) {
     return;
   }
-  const assessmentsResponse = await AdminAPI.getAssessments();
+
+  const targetPage = page || adminState.assessmentsPagination.page || 1;
+  const assessmentsResponse = await AdminAPI.getAssessments(targetPage, adminState.assessmentsPagination.limit);
   adminState.assessments = assessmentsResponse.assessments || [];
+  adminState.assessmentsPagination = Object.assign({}, adminState.assessmentsPagination, assessmentsResponse.pagination || {});
+
+  if (!adminState.assessments.length && adminState.assessmentsPagination.totalPages > 0 && targetPage > adminState.assessmentsPagination.totalPages) {
+    return loadAssessmentsData(true, adminState.assessmentsPagination.totalPages);
+  }
+
   adminState.loaded.assessments = true;
+}
+
+async function goToAssessmentPage(page) {
+  const totalPages = adminState.assessmentsPagination.totalPages || 0;
+  if (page < 1 || (totalPages && page > totalPages)) {
+    return;
+  }
+
+  try {
+    showAdminMessage('Loading synced assessments...', 'info');
+    adminState.loaded.assessments = false;
+    await loadAssessmentsData(true, page);
+    renderAssessmentSummary(adminState.assessments, adminState.assessmentsPagination);
+    document.getElementById('admin-message').classList.add('hidden');
+  } catch (error) {
+    showAdminMessage(error.message || 'Failed to load assessments.', 'error');
+  }
 }
 
 async function activateTab(tabName, forceReload) {
@@ -751,7 +852,7 @@ async function activateTab(tabName, forceReload) {
     } else if (tabName === 'assessments') {
       showAdminMessage('Loading synced assessments...', 'info');
       await loadAssessmentsData(!!forceReload);
-      renderAssessmentSummary(adminState.assessments);
+      renderAssessmentSummary(adminState.assessments, adminState.assessmentsPagination);
     }
 
     document.getElementById('admin-message').classList.add('hidden');
@@ -795,6 +896,12 @@ async function handleLogout() {
     users: false,
     questionSets: false,
     assessments: false
+  };
+  adminState.assessmentsPagination = {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
   };
   setStatus('Logged out.', 'info');
 }
