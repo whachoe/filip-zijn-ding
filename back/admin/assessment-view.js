@@ -24,6 +24,43 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+async function downloadProtectedFile(url, filename) {
+  const token = getToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const response = await fetch(`${API_BASE}${url}`, { headers });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || `Download failed: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename || 'download';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(objectUrl);
+}
+
+function bindMediaDownloadLinks(container) {
+  if (!container) return;
+
+  container.querySelectorAll('[data-media-download="true"]').forEach((link) => {
+    link.addEventListener('click', async (event) => {
+      event.preventDefault();
+
+      try {
+        await downloadProtectedFile(link.dataset.mediaUrl, link.dataset.mediaFilename);
+      } catch (error) {
+        setStatus(error.message || 'Failed to download media.', 'error');
+      }
+    });
+  });
+}
+
 async function apiRequest(endpoint, options = {}) {
   const token = getToken();
   const headers = {
@@ -99,11 +136,25 @@ function scoreDescription(scoreValue, indicatorDef) {
   return indicatorDef.scores[n - 1] || `Score ${n}`;
 }
 
+function renderMediaLinks(mediaItems) {
+  if (!Array.isArray(mediaItems) || !mediaItems.length) {
+    return '<strong>Uploaded Media:</strong> —';
+  }
+
+  return `<strong>Uploaded Media:</strong><br><ul>${mediaItems.map((item) => {
+    const filename = escapeHtml(item.filename || `File ${item.id}`);
+    const url = escapeHtml(item.url || '#');
+    const uploadedAt = item.uploadedAt ? ` <small>(${escapeHtml(new Date(item.uploadedAt).toLocaleString())})</small>` : '';
+    return `<li><a href="#" data-media-download="true" data-media-url="${url}" data-media-filename="${filename}">${filename}</a>${uploadedAt}</li>`;
+  }).join('')}</ul>`;
+}
+
 function renderAssessment(assessmentRow) {
   const assessment = assessmentRow.data || {};
   const scores = assessment.scores || {};
   const categories = parseJsonMaybe(assessmentRow.categories, []);
   const indicators = parseJsonMaybe(assessmentRow.indicators, []);
+  const mediaItems = Array.isArray(assessmentRow.media) ? assessmentRow.media : [];
 
   const metaEl = document.getElementById('assessment-meta');
   const groupsEl = document.getElementById('assessment-answer-groups');
@@ -119,9 +170,11 @@ function renderAssessment(assessmentRow) {
       <strong>Created:</strong> ${escapeHtml(created ? new Date(created).toLocaleString() : '—')}<br>
       <strong>Contact Name:</strong> ${escapeHtml(contactInfo.fullName || '—')}<br>
       <strong>Contact Email:</strong> ${escapeHtml(contactInfo.email || '—')}<br>
-      <strong>Location:</strong> ${escapeHtml(contactInfo.location || '—')}
+      <strong>Location:</strong> ${escapeHtml(contactInfo.location || '—')}<br>
+      ${renderMediaLinks(mediaItems)}
     </div>
   `;
+  bindMediaDownloadLinks(metaEl);
 
   let groupedHtml = '';
   categories.forEach((categoryName, categoryIndex) => {

@@ -349,7 +349,25 @@ router.get('/assessments/:id', async (req, res) => {
               a.created_at,
               a.synced_at,
               q.categories,
-              q.indicators
+              q.indicators,
+              (
+                SELECT COALESCE(
+                  json_agg(
+                    json_build_object(
+                      'id', m.id,
+                      'filename', m.filename,
+                      'fileType', m.file_type,
+                      'fileSize', m.file_size,
+                      'uploadedAt', m.uploaded_at,
+                      'url', '/api/media/' || m.id
+                    )
+                    ORDER BY m.uploaded_at DESC
+                  ),
+                  '[]'::json
+                )
+                FROM media m
+                WHERE m.assessment_id = a.id
+              ) AS media
        FROM assessments a
        JOIN users u ON a.user_id = u.id
        LEFT JOIN question_sets q ON q.version = a.question_set_version
