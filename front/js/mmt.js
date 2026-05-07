@@ -621,9 +621,29 @@
             if (radioToCheck) radioToCheck.checked = true;
         }
         
-        // Add change listener to save progress
-        const radios = document.querySelectorAll('.score-radio');
+        // Add change listener to save progress, and click-to-deselect support
+        const radios = questionContainer.querySelectorAll('.score-radio');
         radios.forEach(radio => {
+            const markWasChecked = function() {
+                radio._wasChecked = radio.checked;
+            };
+
+            radio.addEventListener('mousedown', markWasChecked);
+            radio.addEventListener('pointerdown', markWasChecked);
+
+            const label = questionContainer.querySelector(`label[for="${radio.id}"]`);
+            if (label) {
+                label.addEventListener('mousedown', markWasChecked);
+                label.addEventListener('pointerdown', markWasChecked);
+            }
+
+            radio.addEventListener('click', function() {
+                if (this._wasChecked) {
+                    this.checked = false;
+                    deleteScoreAndSave(this.name);
+                    this._wasChecked = false;
+                }
+            });
             radio.addEventListener('change', () => saveProgress());
         });
     }
@@ -923,6 +943,35 @@
         if (!currentAssessmentId) return null;
         const data = localStorage.getItem(currentAssessmentId);
         return data ? JSON.parse(data) : null;
+    }
+
+    function deleteScoreAndSave(fieldName) {
+        const existing = getAssessmentProgress();
+        if (existing && existing.scores) {
+            delete existing.scores[fieldName];
+        }
+        const contactForm = document.getElementById('settings-form');
+        const contactData = new FormData(contactForm);
+        const assessmentData = {
+            id: currentAssessmentId,
+            contactInfo: {
+                fullName: contactData.get('fullName'),
+                email: contactData.get('email'),
+                location: contactData.get('location')
+            },
+            scores: existing ? existing.scores : {},
+            progress: {
+                currentQuestionIndex: currentQuestionIndex,
+                totalQuestions: allQuestions.length,
+                lastUpdated: new Date().toISOString()
+            },
+            created: existing ? existing.created : new Date().toISOString(),
+            synced: false,
+            version: getCurrentQuestionVersion(),
+            mediaAttachments: [],
+            notes: ""
+        };
+        localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
     }
 
     function saveProgress() {

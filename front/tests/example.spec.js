@@ -312,6 +312,40 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
   expect(reloadedAssessment.synced).toBe(true);
 });
 
+test('allows selecting and deselecting the same assessment score', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+
+  await page.getByLabel('Full Name').fill('Toggle Tester');
+  await page.getByLabel('Email Address').fill('toggle@example.com');
+  await page.getByLabel('Location').fill('Lab');
+
+  await page.getByRole('tab', { name: 'Assessment' }).click();
+  await expect(page.locator('#question-container')).toBeVisible();
+
+  const firstScoreLabel = page.locator('.score-label').first();
+  await firstScoreLabel.click();
+
+  await expect(page.locator('.score-radio').first()).toBeChecked();
+
+  let savedScore = await page.evaluate(() => {
+    const assessmentId = Object.keys(localStorage).find((key) => key.startsWith('assessment_'));
+    const assessment = JSON.parse(localStorage.getItem(assessmentId));
+    return assessment.scores['indicator[0][0]'];
+  });
+  expect(savedScore).toBe('1');
+
+  await firstScoreLabel.click();
+  await expect(page.locator('.score-radio').first()).not.toBeChecked();
+
+  savedScore = await page.evaluate(() => {
+    const assessmentId = Object.keys(localStorage).find((key) => key.startsWith('assessment_'));
+    const assessment = JSON.parse(localStorage.getItem(assessmentId));
+    return assessment.scores['indicator[0][0]'];
+  });
+  expect(savedScore).toBeUndefined();
+});
+
 test('renders reports, exports XLSX, and deletes all assessments', async ({ page }) => {
   await installApiMocks(page);
   await page.goto('/');
