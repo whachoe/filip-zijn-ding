@@ -1321,7 +1321,34 @@
             statusEl.className = 'upload-status ' + (type || 'info');
         }
 
-        skipBtn.addEventListener('click', goToReports);
+        skipBtn.addEventListener('click', function() {
+            var assessment = finishedAssessmentId
+                ? JSON.parse(localStorage.getItem(finishedAssessmentId) || 'null')
+                : null;
+
+            if (assessment && !assessment.synced && typeof syncAssessments === 'function') {
+                skipBtn.disabled = true;
+                syncNotice.textContent = 'Syncing assessment to server…';
+
+                checkServerStatus().then(function(online) {
+                    if (!online) {
+                        syncNotice.textContent = '';
+                        goToReports();
+                        return;
+                    }
+
+                    syncAssessments().then(function() {
+                        syncNotice.textContent = '';
+                        goToReports();
+                    }).catch(function() {
+                        syncNotice.textContent = '';
+                        goToReports();
+                    });
+                });
+            } else {
+                goToReports();
+            }
+        });
 
         fileInput.addEventListener('change', function() {
             uploadBtn.disabled = fileInput.files.length === 0;
