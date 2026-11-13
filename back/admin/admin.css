@@ -334,6 +334,14 @@ button.danger {
   padding: 0.6rem 0.75rem;
 }
 
+.category-box > label {
+  font-weight: bolder;
+}
+
+#admin-question-editor .category-box {
+  margin-top: 0.75rem;
+}
+
 .indicator-box {
   margin-top: 0.5rem;
 }
