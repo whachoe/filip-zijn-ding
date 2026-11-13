@@ -1098,6 +1098,14 @@
         });
     }
 
+    const graphColors = {
+        text: '#23364a',
+        grid: '#768797',
+        current: '#a83b00',
+        previous1: '#005a9c',
+        previous2: '#287334'
+    };
+
     function render_radargraph(scoretable) {
         const data = {
             labels: categories,
@@ -1105,32 +1113,32 @@
                 label: 'Current',
                 data: scoretable.map(function(value) { return value[1].percentage; }),
                 fill: true,
-                backgroundColor: 'rgba(204, 51, 0, 0.3)',
-                borderColor: 'rgb(255, 99, 132)',
-                pointBackgroundColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(168, 59, 0, 0.2)',
+                borderColor: graphColors.current,
+                pointBackgroundColor: graphColors.current,
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgb(255, 99, 132)'
+                pointHoverBorderColor: graphColors.current
             }, {
                 label: 'Previous 1',
                 data: scoretable.map(function(value) { return value[2].percentage; }),
                 fill: true,
-                backgroundColor: 'rgba(255, 153, 102, 0.3)',
-                borderColor: 'rgb(54, 162, 235)',
-                pointBackgroundColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(0, 90, 156, 0.2)',
+                borderColor: graphColors.previous1,
+                pointBackgroundColor: graphColors.previous1,
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgb(54, 162, 235)'
+                pointHoverBorderColor: graphColors.previous1
             }, {
                 label: 'Previous 2',
                 data: scoretable.map(function(value) { return value[3].percentage; }),
                 fill: true,
-                backgroundColor: 'rgba(255, 204, 0, 0.3)',
-                borderColor: 'rgb(54, 162, 235)',
-                pointBackgroundColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(40, 115, 52, 0.2)',
+                borderColor: graphColors.previous2,
+                pointBackgroundColor: graphColors.previous2,
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgb(54, 162, 235)'
+                pointHoverBorderColor: graphColors.previous2
             }]
             };
 
@@ -1144,33 +1152,33 @@
                         max: 100,
                         grid: {
                             circular: true,
-                            color: 'rgba(244, 246, 224, 0.10)',
+                            color: graphColors.grid,
                             z: 1
                         },
                         angleLines: {
-                            color: 'rgba(244, 246, 224, 0.10)'
+                            color: graphColors.grid
                         },
                         pointLabels: {
-                            color: '#F4F6E0'
+                            color: graphColors.text
                         },
                         ticks: {
                             stepSize: 10,
-                            color: '#F4F6E0',
-                            backdropColor: 'rgba(7, 19, 38, 0.9)',
+                            color: graphColors.text,
+                            backdropColor: 'rgba(255, 255, 255, 0.9)',
                             callback: function(value) { return value + '%'; }
                         }
                     }
                 },
                 elements: {
                     line: {
-                        borderWidth: 1
+                        borderWidth: 2
                     }
                 },
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
-                            color: '#F4F6E0'
+                            color: graphColors.text
                         }
                     }
                 }
@@ -1195,8 +1203,8 @@
                 label: 'Current',
                 data: scoretable.map(function(value) { return value[1].percentage; }),
                 fill: true,
-                backgroundColor: '#cc3300',
-                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: graphColors.current,
+                borderColor: graphColors.current,
                 borderWidth: 1
             },
             {
@@ -1204,8 +1212,8 @@
                 label: 'Previous 1',
                 data: scoretable.map(function(value) { return value[2].percentage; }),
                 fill: true,
-                backgroundColor: '#ff9966',
-                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: graphColors.previous1,
+                borderColor: graphColors.previous1,
                 borderWidth: 1
             },
             {
@@ -1213,8 +1221,8 @@
                 label: 'Previous 2',
                 data: scoretable.map(function(value) { return value[3].percentage; }),
                 fill: true,
-                backgroundColor: '#ffcc00',
-                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: graphColors.previous2,
+                borderColor: graphColors.previous2,
                 borderWidth: 1
             }
         ]};
@@ -1223,6 +1231,16 @@
             type: 'bar',
             data,
             options: {
+                scales: {
+                    x: {
+                        ticks: { color: graphColors.text },
+                        grid: { color: graphColors.grid }
+                    },
+                    y: {
+                        ticks: { color: graphColors.text },
+                        grid: { color: graphColors.grid }
+                    }
+                },
                 plugins: {
                     legend: {
                         display: false

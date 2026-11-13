@@ -230,6 +230,12 @@ legend {
   color: var(--bg);
 }
 
+#radar-graph,
+#bar-graph {
+  background-color: #ffffff;
+  border-radius: 8px;
+}
+
 canvas#bar-graph {
   margin-top: 100px;
 }

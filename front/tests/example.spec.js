@@ -417,10 +417,10 @@ test('radar chart displays fixed 10% circular intervals for low scores and after
     expect(scale.min).toBe(0);
     expect(scale.max).toBe(100);
     expect(scale.circular).toBe(true);
-    expect(scale.gridColor).toBe('rgba(244, 246, 224, 0.4)');
+    expect(scale.gridColor).toBe('#768797');
     expect(scale.gridLayer).toBe(1);
-    expect(scale.pointLabelColor).toBe('#F4F6E0');
-    expect(scale.tickColor).toBe('#F4F6E0');
+    expect(scale.pointLabelColor).toBe('#23364a');
+    expect(scale.tickColor).toBe('#23364a');
     expect(scale.values).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
     expect(scale.labels).toEqual(scale.values.map((value) => `${value}%`));
     expect(scale.scores.every((score) => score === 25)).toBe(true);
@@ -464,4 +464,43 @@ test('radar chart displays fixed 10% circular intervals for low scores and after
   await page.getByRole('tab', { name: 'Home' }).click();
   await page.getByRole('tab', { name: 'Reports' }).click();
   await checkScale();
+});
+
+test('report graphs use a readable palette on light backgrounds', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await seedAssessments(page, buildAssessmentDefinitions());
+  await page.getByRole('tab', { name: 'Reports' }).click();
+  await expect.poll(() => page.evaluate(() => {
+    const chart = window.Chart.getChart('bar-graph');
+    return chart ? chart.scales.x.ticks.length : 0;
+  })).toBeGreaterThan(0);
+
+  const styles = await page.evaluate(() => {
+    const radar = window.Chart.getChart('radar-graph');
+    const bar = window.Chart.getChart('bar-graph');
+    return {
+      backgrounds: [radar, bar].map((chart) => getComputedStyle(chart.canvas).backgroundColor),
+      radarText: [radar.scales.r.options.ticks.color, radar.scales.r.options.pointLabels.color, radar.options.plugins.legend.labels.color],
+      barText: [bar.scales.x.options.ticks.color, bar.scales.y.options.ticks.color],
+      grids: [radar.scales.r.options.grid.color, radar.scales.r.options.angleLines.color, bar.scales.x.options.grid.color, bar.scales.y.options.grid.color],
+      radarSeries: radar.data.datasets.map((dataset) => dataset.borderColor),
+      barSeries: bar.data.datasets.map((dataset) => dataset.backgroundColor)
+    };
+  });
+  const contrastWithWhite = (hex) => {
+    const rgb = hex.slice(1).match(/../g).map((value) => parseInt(value, 16) / 255);
+    const linear = rgb.map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    return 1.05 / (luminance + 0.05);
+  };
+  expect(styles.backgrounds).toEqual(['rgb(255, 255, 255)', 'rgb(255, 255, 255)']);
+  expect(styles.radarSeries).toEqual(styles.barSeries);
+  expect(new Set(styles.radarSeries).size).toBe(3);
+  for (const color of [...styles.radarText, ...styles.barText]) {
+    expect(contrastWithWhite(color)).toBeGreaterThanOrEqual(4.5);
+  }
+  for (const color of [...styles.grids, ...styles.radarSeries]) {
+    expect(contrastWithWhite(color)).toBeGreaterThanOrEqual(3);
+  }
 });
