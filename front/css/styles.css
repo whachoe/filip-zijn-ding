@@ -447,6 +447,7 @@ legend {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .score-option {
@@ -564,6 +565,56 @@ legend {
 .upload-screen p {
   color: var(--muted);
   margin-bottom: 1.25rem;
+}
+
+#question-notes,
+#assessment-notes {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.question-notes {
+  margin-top: 0.75rem;
+}
+
+.question-notes label {
+  display: block;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+}
+
+#question-notes {
+  height: 2.9rem;
+  margin: 0;
+  line-height: 1.4;
+  resize: none;
+  transition: height 0.2s ease;
+}
+
+.question-notes:focus-within label {
+  max-height: 2rem;
+  opacity: 1;
+}
+
+.question-notes:focus-within #question-notes {
+  height: 6rem;
+  margin-top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .question-notes label,
+  #question-notes {
+    transition: none;
+  }
 }
 
 .upload-status {

@@ -171,6 +171,7 @@ function renderAssessment(assessmentRow) {
       <strong>Contact Name:</strong> ${escapeHtml(contactInfo.fullName || '—')}<br>
       <strong>Contact Email:</strong> ${escapeHtml(contactInfo.email || '—')}<br>
       <strong>Location:</strong> ${escapeHtml(contactInfo.location || '—')}<br>
+      <strong>Assessment notes:</strong> <span class="assessment-notes">${escapeHtml(assessment.notes || '—')}</span><br>
       ${renderMediaLinks(mediaItems)}
     </div>
   `;
@@ -185,11 +186,12 @@ function renderAssessment(assessmentRow) {
       const key = `indicator[${categoryIndex}][${indicatorIndex}]`;
       const value = scores[key];
       const n = scoreNumeric(value);
+      const note = assessment.questionNotes && assessment.questionNotes[key];
       const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
       rows += `<tr>
         <td>${escapeHtml(indicator.name || `Indicator ${indicatorIndex + 1}`)}</td>
         ${scoreCell}
-        <td>${escapeHtml(scoreDescription(value, indicator))}</td>
+        <td>${escapeHtml(scoreDescription(value, indicator))}${note ? `<br><strong>Notes:</strong> <span class="assessment-notes">${escapeHtml(note)}</span>` : ''}</td>
       </tr>`;
     });
 

@@ -150,11 +150,18 @@ async function syncAssessments() {
       
       // Make API call
       const response = await AssessmentAPI.sync(assessment);
+      if (!Array.isArray(response.uploaded) || !response.uploaded.includes(id)) {
+        const failure = response.errors && response.errors.find(item => item.id === id);
+        throw new Error(failure ? failure.error : 'Server did not confirm the assessment was saved');
+      }
       
       // Mark as synced
-      assessment.synced = true;
-      assessment.syncedAt = new Date().toISOString();
-      localStorage.setItem(id, JSON.stringify(assessment));
+      const current = JSON.parse(localStorage.getItem(id) || 'null');
+      if (current && JSON.stringify(current) === JSON.stringify(assessment)) {
+        current.synced = true;
+        current.syncedAt = new Date().toISOString();
+        localStorage.setItem(id, JSON.stringify(current));
+      }
       
       results.uploaded.push(id);
       syncStatus.synced++;

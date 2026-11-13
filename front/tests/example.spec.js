@@ -90,7 +90,7 @@ async function installApiMocks(page, options = {}) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true })
+        body: JSON.stringify({ success: true, uploaded: [route.request().postDataJSON().id] })
       });
       return;
     }
@@ -344,6 +344,51 @@ test('allows selecting and deselecting the same assessment score', async ({ page
     return assessment.scores['indicator[0][0]'];
   });
   expect(savedScore).toBeUndefined();
+});
+
+test('preserves question notes through navigation and saves final assessment notes', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(page.locator('#frontend-welcome-section')).toBeVisible();
+  await page.getByLabel('Full Name').fill('Notes Tester');
+  await page.getByLabel('Email Address').fill('notes@example.com');
+  await page.getByLabel('Location').fill('Market');
+  await page.getByRole('tab', { name: 'Assessment' }).click();
+  const questionNotes = page.getByRole('textbox', { name: 'Notes (optional)' });
+  const label = page.locator('label[for="question-notes"]');
+  await expect(label).toHaveCSS('opacity', '0');
+  const collapsedHeight = (await questionNotes.boundingBox()).height;
+  await questionNotes.focus();
+  await expect(label).toHaveCSS('opacity', '1');
+  await expect.poll(async () => (await questionNotes.boundingBox()).height).toBeGreaterThan(collapsedHeight + 20);
+  await questionNotes.fill('First question observation');
+  await page.locator('#next-btn').focus();
+  await expect(label).toHaveCSS('opacity', '0');
+  await expect.poll(async () => (await questionNotes.boundingBox()).height).toBeLessThan(collapsedHeight + 1);
+  await expect(questionNotes).toHaveValue('First question observation');
+  await page.locator('.score-label').first().click();
+  await page.locator('.score-label').first().click();
+  await page.locator('#next-btn').click();
+  await page.locator('#question-notes').fill('Second question observation');
+  await page.locator('#prev-btn').click();
+  await expect(page.locator('#question-notes')).toHaveValue('First question observation');
+
+  const questionCount = await page.evaluate(() => window.getCurrentQuestionSet().indicators.reduce((n, category) => n + category.length, 0));
+  for (let i = 1; i < questionCount; i++) await page.locator('#next-btn').click();
+  await page.locator('#finish-btn').click();
+  await page.locator('#assessment-notes').fill('Final assessment notes');
+  const assessment = await page.evaluate(() => {
+    const id = JSON.parse(localStorage.getItem('assessment_list'))[0];
+    return JSON.parse(localStorage.getItem(id));
+  });
+  expect(assessment.notes).toBe('Final assessment notes');
+  expect(assessment.questionNotes['indicator[0][0]']).toBe('First question observation');
+  expect(assessment.questionNotes['indicator[0][1]']).toBe('Second question observation');
+  expect(assessment.scores['indicator[0][0]']).toBeUndefined();
+  expect(assessment.synced).toBe(false);
 });
 
 test('renders reports, exports XLSX, and deletes all assessments', async ({ page }) => {

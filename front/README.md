@@ -63,6 +63,7 @@ Each assessment now includes:
   },
   mediaAttachments: [],
   notes: "",
+  questionNotes: { "indicator[X][Y]": "Optional observation" },
   created: "ISO date",
   synced: false,        // True when uploaded to server
   syncedAt: "ISO date", // When sync completed
@@ -75,6 +76,12 @@ Each assessment now includes:
 1. **Normal Operation**: Continue using the app offline as usual
 2. **Manual Sync**: Navigate to Export tab and click "Send to Server"
 3. **Auto Status**: Online/offline detection updates sync button automatically
+
+Question notes are saved with the assessment as they are entered. The final screen
+also saves optional assessment-wide notes locally and marks the assessment for
+sync. Both kinds of notes appear in the admin assessment detail after sync.
+The existing attachment uploader still requires a server connection and login;
+it currently accepts images and PDFs only.
 
 ### Authentication Required
 

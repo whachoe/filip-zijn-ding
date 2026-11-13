@@ -609,12 +609,28 @@
         
         html += `
             </div>
+            <div class="question-notes">
+              <label for="question-notes">Notes (optional)</label>
+              <textarea id="question-notes" rows="1" placeholder="Add notes (optional)"></textarea>
+            </div>
+            <p id="question-notes-status" role="status"></p>
           </fieldset>`;
         
         questionContainer.innerHTML = html;
         
         // Restore previously saved answer if exists
         const savedAnswer = getAssessmentProgress();
+        const noteInput = document.getElementById('question-notes');
+        noteInput.value = savedAnswer && savedAnswer.questionNotes ? savedAnswer.questionNotes[fieldName] || '' : '';
+        noteInput.addEventListener('input', function() {
+            const status = document.getElementById('question-notes-status');
+            try {
+                saveProgress();
+                status.textContent = '';
+            } catch (error) {
+                status.textContent = 'Could not save your notes: ' + error.message;
+            }
+        });
         if (savedAnswer && savedAnswer.scores && savedAnswer.scores[fieldName]) {
             const savedValue = savedAnswer.scores[fieldName];
             const radioToCheck = document.querySelector(`input[name="${fieldName}"][value="${savedValue}"]`);
@@ -968,8 +984,9 @@
             created: existing ? existing.created : new Date().toISOString(),
             synced: false,
             version: getCurrentQuestionVersion(),
-            mediaAttachments: [],
-            notes: ""
+            mediaAttachments: existing && existing.mediaAttachments ? existing.mediaAttachments : [],
+            notes: existing && existing.notes ? existing.notes : "",
+            questionNotes: existing && existing.questionNotes ? existing.questionNotes : {}
         };
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
     }
@@ -981,6 +998,14 @@
         // Merge with existing scores
         const existing = getAssessmentProgress();
         const allScores = existing && existing.scores ? {...existing.scores, ...scores} : scores;
+        const questionNotes = existing && existing.questionNotes ? {...existing.questionNotes} : {};
+        const question = allQuestions[currentQuestionIndex];
+        const noteInput = document.getElementById('question-notes');
+        if (question && noteInput) {
+            const key = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
+            if (noteInput.value) questionNotes[key] = noteInput.value;
+            else delete questionNotes[key];
+        }
         
         const contactForm = document.getElementById('settings-form');
         const contactData = new FormData(contactForm);
@@ -1002,8 +1027,9 @@
             created: existing ? existing.created : new Date().toISOString(),
             synced: false,
             version: getCurrentQuestionVersion(),
-            mediaAttachments: [],
-            notes: ""
+            mediaAttachments: existing && existing.mediaAttachments ? existing.mediaAttachments : [],
+            notes: existing && existing.notes ? existing.notes : "",
+            questionNotes: questionNotes
         };
         
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
@@ -1344,7 +1370,9 @@
         wrapper.innerHTML = [
             '<div id="upload-screen" class="upload-screen">',
             '  <h2>Upload Supporting Media</h2>',
-            '  <p>Attach photos, PDFs or other documents to your assessment.</p>',
+            '  <p>Upload photos or PDFs while connected and signed in.</p>',
+            '  <label for="assessment-notes">Assessment notes (optional)</label>',
+            '  <textarea id="assessment-notes" rows="4" placeholder="Additional assessment notes"></textarea>',
             '  <div id="upload-status" class="upload-status"></div>',
             '  <div id="upload-sync-notice" class="upload-sync-notice"></div>',
             '  <div class="upload-input-row">',
@@ -1364,6 +1392,21 @@
         var statusEl = document.getElementById('upload-status');
         var syncNotice = document.getElementById('upload-sync-notice');
         var resultsList = document.getElementById('upload-results');
+        var notesInput = document.getElementById('assessment-notes');
+        var savedAssessment = JSON.parse(localStorage.getItem(finishedAssessmentId) || 'null');
+        notesInput.value = savedAssessment && savedAssessment.notes ? savedAssessment.notes : '';
+        notesInput.addEventListener('input', function() {
+            try {
+                var stored = JSON.parse(localStorage.getItem(finishedAssessmentId) || 'null');
+                if (!stored) throw new Error('Assessment not found in local storage.');
+                stored.notes = notesInput.value;
+                stored.synced = false;
+                localStorage.setItem(finishedAssessmentId, JSON.stringify(stored));
+                if (typeof updateSyncStatus === 'function') updateSyncStatus();
+            } catch (error) {
+                setStatus('Could not save assessment notes: ' + error.message, 'error');
+            }
+        });
 
         function goToReports() {
             refreshReports();
