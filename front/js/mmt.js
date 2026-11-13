@@ -1105,7 +1105,7 @@
                 label: 'Current',
                 data: scoretable.map(function(value) { return value[1].percentage; }),
                 fill: true,
-                backgroundColor: '#cc3300',
+                backgroundColor: 'rgba(204, 51, 0, 0.3)',
                 borderColor: 'rgb(255, 99, 132)',
                 pointBackgroundColor: 'rgb(255, 99, 132)',
                 pointBorderColor: '#fff',
@@ -1115,7 +1115,7 @@
                 label: 'Previous 1',
                 data: scoretable.map(function(value) { return value[2].percentage; }),
                 fill: true,
-                backgroundColor: '#ff9966',
+                backgroundColor: 'rgba(255, 153, 102, 0.3)',
                 borderColor: 'rgb(54, 162, 235)',
                 pointBackgroundColor: 'rgb(54, 162, 235)',
                 pointBorderColor: '#fff',
@@ -1125,7 +1125,7 @@
                 label: 'Previous 2',
                 data: scoretable.map(function(value) { return value[3].percentage; }),
                 fill: true,
-                backgroundColor: '#ffcc00',
+                backgroundColor: 'rgba(255, 204, 0, 0.3)',
                 borderColor: 'rgb(54, 162, 235)',
                 pointBackgroundColor: 'rgb(54, 162, 235)',
                 pointBorderColor: '#fff',
@@ -1138,6 +1138,29 @@
             type: 'radar',
             data: data,
             options: {
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            circular: true,
+                            color: 'rgba(244, 246, 224, 0.10)',
+                            z: 1
+                        },
+                        angleLines: {
+                            color: 'rgba(244, 246, 224, 0.10)'
+                        },
+                        pointLabels: {
+                            color: '#F4F6E0'
+                        },
+                        ticks: {
+                            stepSize: 10,
+                            color: '#F4F6E0',
+                            backdropColor: 'rgba(7, 19, 38, 0.9)',
+                            callback: function(value) { return value + '%'; }
+                        }
+                    }
+                },
                 elements: {
                     line: {
                         borderWidth: 1
@@ -1145,7 +1168,10 @@
                 },
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            color: '#F4F6E0'
+                        }
                     }
                 }
             },

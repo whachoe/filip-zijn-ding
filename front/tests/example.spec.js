@@ -381,3 +381,87 @@ test('renders reports, exports XLSX, and deletes all assessments', async ({ page
   expect(storageState.itemCount).toBe(0);
   expect(storageState.assessmentList).toBeNull();
 });
+
+test('radar chart displays fixed 10% circular intervals for low scores and after reopening reports', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await seedAssessments(page, [{
+    id: 'assessment_20260501_090000',
+    created: '2026-05-01T09:00:00.000Z',
+    scoreValue: '1',
+    synced: true
+  }]);
+
+  const checkScale = async () => {
+    await expect.poll(() => page.evaluate(() => {
+      const chart = window.Chart.getChart('radar-graph');
+      return chart ? chart.scales.r.ticks.length : 0;
+    })).toBe(11);
+    const scale = await page.evaluate(() => {
+      const chart = window.Chart.getChart('radar-graph');
+      const radial = chart.scales.r;
+      return {
+        min: radial.min,
+        max: radial.max,
+        circular: radial.options.grid.circular,
+        gridColor: radial.options.grid.color,
+        gridLayer: radial.options.grid.z,
+        pointLabelColor: radial.options.pointLabels.color,
+        tickColor: radial.options.ticks.color,
+        values: radial.ticks.map((tick) => tick.value),
+        labels: radial.ticks.map((tick) => tick.label),
+        scores: chart.data.datasets[0].data,
+        fills: chart.data.datasets.map((dataset) => dataset.backgroundColor)
+      };
+    });
+    expect(scale.min).toBe(0);
+    expect(scale.max).toBe(100);
+    expect(scale.circular).toBe(true);
+    expect(scale.gridColor).toBe('rgba(244, 246, 224, 0.4)');
+    expect(scale.gridLayer).toBe(1);
+    expect(scale.pointLabelColor).toBe('#F4F6E0');
+    expect(scale.tickColor).toBe('#F4F6E0');
+    expect(scale.values).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+    expect(scale.labels).toEqual(scale.values.map((value) => `${value}%`));
+    expect(scale.scores.every((score) => score === 25)).toBe(true);
+    expect(scale.fills.every((fill) => fill.startsWith('rgba('))).toBe(true);
+  };
+
+  await page.getByRole('tab', { name: 'Reports' }).click();
+  await checkScale();
+  const ringDifferences = await page.evaluate(() => {
+    const chart = window.Chart.getChart('radar-graph');
+    const radial = chart.scales.r;
+    const ctx = chart.ctx;
+    const ratio = chart.currentDevicePixelRatio;
+    chart.stop();
+    chart.options.animation = false;
+    chart.update('none');
+    const withGrid = ctx.getImageData(0, 0, chart.canvas.width, chart.canvas.height).data;
+    chart.options.scales.r.grid.display = false;
+    chart.update('none');
+    const withoutGrid = ctx.getImageData(0, 0, chart.canvas.width, chart.canvas.height).data;
+    const differences = [];
+    for (let value = 10; value <= 100; value += 10) {
+      const radius = radial.getDistanceFromCenterForValue(value);
+      let strongestDifference = 0;
+      for (let angle = 0.1; angle < Math.PI * 2; angle += 0.1) {
+        const x = Math.round((radial.xCenter + Math.cos(angle) * radius) * ratio);
+        const y = Math.round((radial.yCenter + Math.sin(angle) * radius) * ratio);
+        const index = (y * chart.canvas.width + x) * 4;
+        for (let channel = 0; channel < 4; channel++) {
+          strongestDifference = Math.max(strongestDifference, Math.abs(withGrid[index + channel] - withoutGrid[index + channel]));
+        }
+      }
+      differences.push(strongestDifference);
+    }
+    chart.options.scales.r.grid.display = true;
+    chart.update('none');
+    return { differences, width: chart.canvas.width, height: chart.canvas.height, ratio, x: radial.xCenter, y: radial.yCenter, radius: radial.drawingArea };
+  });
+  expect(ringDifferences.differences).toHaveLength(10);
+  expect(ringDifferences.differences.every((difference) => difference >= 50), `Ring pixel differences: ${JSON.stringify(ringDifferences)}`).toBe(true);
+  await page.getByRole('tab', { name: 'Home' }).click();
+  await page.getByRole('tab', { name: 'Reports' }).click();
+  await checkScale();
+});
