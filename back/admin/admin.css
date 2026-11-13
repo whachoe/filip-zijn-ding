@@ -354,7 +354,7 @@ button.danger {
 }
 
 .assessment-answer-col-score {
-  width: 5.5rem;
+  width: 7.5rem;
 }
 
 .assessment-answer-col-answer {
@@ -366,7 +366,8 @@ button.danger {
   overflow-wrap: anywhere;
 }
 
-.score-cell {
+.table th.score-cell,
+.table td.score-cell {
   width: 4rem;
   text-align: center;
   font-weight: 700;

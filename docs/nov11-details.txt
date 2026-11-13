@@ -1,0 +1,333 @@
+Hi both,
+
+I have compiled all the feedback on the current MMT, together with a few things I noticed when reviewing the question set. Below is everything we need to cover on our call.
+
+Some of this concerns the app itself, some concerns question wording and answer options, and some requires us to agree how we want the assessment and scoring to work. We can go through the list together and assign responsibility for each part.
+
+I have included proposed field options for the opening page so we have something concrete to work from. These are suggestions for us to agree, rather than a final specification.
+
+1. Loading page: market identification and assessment details
+
+We need enough information to identify the market properly, describe what happens there, and link repeat assessments.
+
+Field
+	
+
+Proposed format/options
+
+Market name
+	
+
+Free text, including an alternative/local name if relevant. Also maybe a dropdown for associating to other assessments?
+
+Country
+	
+
+Free text, including an alternative/local name if relevant.
+
+Province/state and district
+	
+
+Free text, including an alternative/local name if relevant.
+
+City/town/village
+	
+
+Free text, including an alternative/local name if relevant.
+
+Market setting
+	
+
+Single selection: village/rural settlement; small town; large town/city; peri-urban; other—specify; don’t know.
+
+GPS coordinates
+	
+
+Latitude and longitude, with automatic phone-location capture and manual entry options.
+
+Lead assessor
+	
+
+Linked to the user, with the name visible.
+
+Other assessors present
+	
+
+Names and, where useful, organizations.
+
+Assessment sequence
+	
+
+Initial assessment; repeat 1; repeat 2; etc., ideally generated from the market’s assessment history.
+
+General market notes
+	
+
+Free text covering approximate size, layout, main activities, and relevant location details.
+
+Email
+	
+
+Good
+
+Suggested also having a notes section and prompt: “Please tell us more about this market and any important location details.”
+
+2. Opening page: proposed market-characterization options
+
+We should keep the different characteristics separate because a market can be wholesale and retail, sell both live animals and food products, and also slaughter animals onsite.
+
+Variable
+	
+
+Proposed options
+
+Trading function
+	
+
+Single selection: wholesale; retail; both; other—specify; don’t know.
+
+Market activities/components
+	
+
+Multiple selections: traditional food sales; live animal sales; sale of meat/carcasses or other animal products; slaughter onsite; other—specify. Include “none of these” and “don’t know / information not available” as exclusive options.
+
+Operating frequency
+	
+
+Single selection: daily; several days per week; weekly; fortnightly; monthly; irregular/event-based; other—specify; don’t know. Add a separate seasonal-operation field and space for operating days/months.
+
+Animals slaughtered onsite
+	
+
+Yes; no; don’t know. If yes, select species slaughtered using the species list below. This should agree with the market-activities selection.
+
+Live animals held before sale/slaughter
+	
+
+Yes; no; don’t know.
+
+Animals kept overnight
+	
+
+Yes; no; don’t know; not applicable where no live animals are present.
+
+More than one live animal species present
+	
+
+Yes; no; don’t know; not applicable where no live animals are present.
+
+Different species housed or handled together
+	
+
+Yes; no; don’t know; not applicable. Detailed separation practices would remain in the scored questions.
+
+Approximate market size
+	
+
+Estimated number of vendors/stalls, with “don’t know” and space for other size information. We should agree whether any additional size measure is useful.
+
+For species, a proposed multiple-selection list is:
+
+    Chickens.
+    Ducks.
+    Geese.
+    Turkeys.
+    Quail.
+    Pigeons/doves.
+    Other birds—specify.
+    Pigs.
+    Cattle/buffalo.
+    Sheep/goats.
+    Rabbits.
+    Dogs/cats.
+    Rodents.
+    Bats.
+    Other mammals—specify.
+    Reptiles/amphibians—specify.
+    Fish/aquatic animals—specify.
+    Other—specify.
+    No live animals present.
+    Don’t know / information not available.
+
+We should separately record animal origin/status as domestic livestock/poultry, farmed wildlife, wild-caught animals, other—specify, or unknown, allowing more than one selection. This avoids assuming that species alone tells us whether an animal is wild-caught or farmed.
+
+For every checkbox group, we need an explicit “Don’t know / information not available” option. A blank or unchecked box must not automatically mean “no.”
+
+“None,” “don’t know,” and “not applicable” should be exclusive of substantive selections. Where only some information is known, people should be able to select what they know and flag the list as incomplete, with a note.
+
+3. GPS capture from the phone
+
+Can we add a “Use current location” button so an assessor standing at the market can populate the coordinates directly from their phone?
+
+The intended flow would be to request location permission, capture latitude and longitude, display the result for confirmation, and allow a retry. Where available, it would also be useful to save the reported accuracy and capture time.
+
+We should retain manual coordinate entry if permission is denied, location capture fails, or the assessment is entered later. It should be clear that this captures the phone’s current position: someone completing the assessment from their office should not accidentally save the office as the market location.
+
+4. Market records and repeat assessments
+
+One tester reported that the app appears to treat the user as the market, and changing the location does not reliably separate current and previous assessments.
+
+We need to check this and make sure:
+
+    Every market has a distinct record and unique identifier.
+    One user can assess multiple markets.
+    Different users can assess the same market.
+    Each assessment is linked to the selected market.
+    The opening workflow offers “select an existing market” or “create a new market.”
+    Repeat-assessment numbering follows the market’s history.
+    Comparisons clearly identify the market and assessment dates.
+
+We should specifically test two different markets assessed by the same user, and the same market assessed on different dates by different users.
+
+5. Notes and supporting materials
+
+Each question page needs an optional notes field so assessors can explain observations, uncertainty, evidence, or why a response did not quite fit.
+
+The final page should allow multiple photo uploads and uploads of other materials obtained during the assessment, such as market rules, SOPs, maps, posters, or records.
+
+Notes and attachments need to stay linked to the relevant assessment and remain accessible when reviewing it later.
+
+6. Specific question wording and answer options I was asked about…can change these or not
+
+I have used category names and question titles because the numbering may differ between versions.
+
+Section/question
+	
+
+Point to address
+
+Category 1: Governance, Regulation, and Market Management — SOPs for cleaning, disinfection, slaughter, animal and waste handling
+	
+
+Distinguish carcass disposal, solid waste handling, and wastewater management. We need to capture differences in what the SOPs cover and what is implemented.
+
+Category 2: Infrastructure and Facilities — drainage, wastewater, solid waste, and carcass disposal
+	
+
+Separate the bundled components. A market may have functional drainage but poor carcass disposal, making one combined response difficult to interpret.
+
+Category 2: Infrastructure and Facilities — cold storage/chilling units
+	
+
+Add appropriate applicability rules and N/A. No onsite slaughter does not automatically mean chilling is unnecessary if perishable products are sold.
+
+Category 4: Controlling Zoonotic Risk Factors — high-risk species and species mixing
+	
+
+Revise to focus on mixing, separation, and contact between species, including wild and farmed animals. Avoid a universal high-risk-species list because this depends on the pathogen and context.
+
+Category 4: Controlling Zoonotic Risk Factors — holding duration and density/conditions
+	
+
+Replace the answer options, which currently repeat the species-mixing responses. Assess actual duration, density, and conditions, including markets without formal holding pens.
+
+Category 4: Controlling Zoonotic Risk Factors — slaughtering within market premises
+	
+
+Separate “no slaughter onsite” from the best-practice slaughter response. Use the opening market profile to trigger the appropriate N/A or skip logic.
+
+Category 7: Market Connectivity and Trade Dynamics — frequency and scale of trade and peak periods
+	
+
+Distinguish actual frequency/volume from whether records exist. Agree definitions if low/medium/high categories are used, or capture approximate quantities directly.
+
+Category 7: Market Connectivity and Trade Dynamics — trade-network mapping, sources/destinations, and cross-border/informal trade
+	
+
+Explain who to ask and what evidence to use, such as managers, traders, transporters, or movement records. Allow unknown information rather than requiring assumptions.
+
+Category 8: Emergency Preparedness and Risk Mitigation — isolation/quarantine spaces
+	
+
+Capture who is responsible, who has enforcement authority, and whether procedures are used, alongside the availability of suitable space.
+
+For animal holding, the feedback specifically noted that formal holding pens are uncommon in many African markets. The wording needs to accommodate cages, temporary enclosures, tethering, and other arrangements rather than assuming a particular infrastructure.
+
+Across the questionnaire, we need to check that every set of responses actually answers its question and covers realistic market conditions.
+
+7. Applicability and skip logic
+
+Throughout the tool, we must distinguish:
+
+    No/absent: a substantive answer.
+    Not applicable: the activity or requirement does not apply.
+    Don’t know / information not available: the question applies, but the information is unavailable.
+    Unanswered: the question has not been completed.
+
+We should not treat these as interchangeable in the saved data, calculations, or reports.
+
+8. Scoring and interpretation
+
+One tester selected mostly weak responses and still received a score around 50%. That does not establish a calculation error, but we need to investigate and explain the result clearly. We need to review the numerical values assigned to answers, category calculations, overall calculation, and any weighting. We also need to check that the direction of scoring is consistent. The report needs a legend explaining what the percentage represents and whether a higher score means better performance. It should not look like a measured probability of disease.
+
+For special responses, the proposed approach for discussion is:
+
+Response
+	
+
+Calculation/display treatment to agree
+
+No/absent
+	
+
+Score according to the relevant answer scale.
+
+Not applicable
+	
+
+Exclude from the applicable scoring denominator; do not award zero or full marks.
+
+Don’t know / information not available
+	
+
+Do not automatically assign zero or a midpoint. Agree whether it is excluded from the performance calculation and reported separately as an information gap, or handled through another explicit rule.
+
+Unanswered
+	
+
+Flag as incomplete; do not silently convert it into a substantive answer.
+
+If unknown responses are excluded from a calculation, we need to prevent an assessment based on very little information from appearing equivalent to a well-supported assessment. We should agree whether a minimum completion/coverage requirement is needed before showing a category or overall score.
+
+9. Missing information on graphs and comparisons
+
+The treatment of N/A and unknown answers needs to be clear on the graphs as well as in the calculations.
+
+A missing category score must not appear as zero. A category with no applicable questions should be labeled N/A. If there is insufficient information to calculate a category score, that should also be explicit.
+
+For the spider chart, we need to agree how those gaps are represented without implying a value or connecting the chart in a misleading way.
+
+Each category should show, either alongside the chart or in its accompanying detail:
+
+    Number of questions contributing to the score.
+    Number marked N/A.
+    Number marked unknown/information unavailable.
+    Number left unanswered.
+
+For comparisons between visits, we should flag differences in coverage, applicability, and questionnaire/scoring version. Otherwise, an apparent improvement could simply reflect fewer questions being scored or different questions being applicable.
+
+We should test these situations explicitly rather than only checking fully completed assessments.
+
+10. Chart appearance
+
+The spider chart needs a light background. We also need separate visual schemes for risk/performance and for identifying current versus previous assessments. Red-to-green scoring colors should not also identify different visits. Comparison colors, date labels, legends, and the direction of the scale all need to be clear.
+
+11. Final review and testing
+
+Once the changes are implemented, Filip and I need to go through the complete updated assessment and recheck the wording, answers, and behavior.
+
+This should cover:
+
+    Opening fields and checkbox options.
+    Unknown, N/A, and unanswered responses.
+    GPS capture and manual entry.
+    Question wording and matching answer options.
+    Skip logic and changes to earlier answers.
+    Notes and uploads.
+    Category and overall calculations.
+    Graphs with complete and incomplete information.
+    Market records and repeat-assessment comparisons.
+
+That should give us the full agenda. During the call, we can agree the remaining decisions, assign each item, and identify what Filip and I need to provide before the app changes can be completed.
+
+Thanks,

@@ -1,0 +1,20 @@
+Jo
+
+    Review and update the landing page and opening market-information pages, using the proposed fields and options in the previous email.
+    Review the ending page for notes, photos, and supporting-material uploads.
+    Change the output graphs to use a light background.
+    Add a “Not applicable” option to every assessment question.
+    Treat a skipped question as “Don’t know.” We do not need additional standalone “No” or “Not answered” options alongside the existing question-specific responses.
+
+Erik
+
+    Work directly on the MMT questions and answer options to address the user feedback and issues identified in the previous email.
+    Prepare the first draft of the “How to use this” page, based on the LMT documents. This should explain how to complete the assessment, choose responses, and distinguish “Not applicable” from skipping a question because the answer is unknown.
+
+Scoring still needs to be resolved
+
+We agreed how users will indicate N/A and unknown information, but we still need to understand how these affect the calculations and graphs. Specifically, we need to establish how N/A and skipped/“Don’t know” responses affect category and overall scores, including the denominators. We also need to check what appears on the graphs when a category has few scored responses, all responses are unknown, or no questions are applicable. This also matters when comparing visits: a change in score should be interpretable alongside changes in how many questions were answered or applicable.
+
+Final review
+
+Once the edits are complete, Filip and I will go through the updated tool to check the questions, answer options, opening fields, N/A and skipped-question behavior, notes/uploads, scoring, graphs, and comparisons between assessments.

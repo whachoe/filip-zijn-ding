@@ -530,6 +530,25 @@ function scoreDescription(v, indicatorDef) {
   return indicatorDef.scores[n - 1] || `Score ${n}`;
 }
 
+function formatScoreSummary(scoreValues, totalKnown) {
+  let scoreTotal = 0;
+  let answeredCount = 0;
+
+  scoreValues.forEach((value) => {
+    const score = scoreNumeric(value);
+    if (score !== null) {
+      scoreTotal += score;
+      answeredCount++;
+    }
+  });
+
+  const average = answeredCount ? (scoreTotal / answeredCount).toFixed(0) : '—';
+  const confidence = totalKnown && scoreValues.length
+    ? `${Math.round((answeredCount * 100) / scoreValues.length)}%`
+    : '—';
+  return `${average} (${confidence})`;
+}
+
 function renderMediaLinks(mediaItems) {
   if (!Array.isArray(mediaItems) || !mediaItems.length) {
     return '<strong>Uploaded Media:</strong> —';
@@ -555,6 +574,11 @@ function renderAssessmentDetail(assessmentRow) {
 
   const contactInfo = assessment.contactInfo || {};
   const created = assessment.created_at || assessment.created || assessmentRow.created_at;
+  const scoreColumns = `<colgroup>
+    <col class="assessment-answer-col-indicator">
+    <col class="assessment-answer-col-score">
+    <col class="assessment-answer-col-answer">
+  </colgroup>`;
 
   metaEl.innerHTML = `
     <div class="version-item">
@@ -571,12 +595,19 @@ function renderAssessmentDetail(assessmentRow) {
   bindMediaDownloadLinks(metaEl);
 
   let groupedHtml = '';
+  const overallScores = [];
+  let overallTotalKnown = categories.length > 0;
   categories.forEach((categoryName, categoryIndex) => {
-    const categoryIndicators = indicators[categoryIndex] || [];
+    const categoryTotalKnown = Array.isArray(indicators[categoryIndex]);
+    const categoryIndicators = categoryTotalKnown ? indicators[categoryIndex] : [];
+    if (!categoryTotalKnown) overallTotalKnown = false;
+    const categoryScores = [];
     let rows = '';
     categoryIndicators.forEach((indicator, indicatorIndex) => {
       const key = `indicator[${categoryIndex}][${indicatorIndex}]`;
       const value = scores[key];
+      categoryScores.push(value);
+      overallScores.push(value);
       const n = scoreNumeric(value);
       const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
       rows += `<tr><td>${escapeHtml(indicator.name || `Indicator ${indicatorIndex + 1}`)}</td>${scoreCell}<td>${escapeHtml(scoreDescription(value, indicator))}</td></tr>`;
@@ -585,13 +616,12 @@ function renderAssessmentDetail(assessmentRow) {
       <section class="category-box">
         <h3>${escapeHtml(categoryName || `Category ${categoryIndex + 1}`)}</h3>
         <table class="table assessment-answer-table">
-          <colgroup>
-            <col class="assessment-answer-col-indicator">
-            <col class="assessment-answer-col-score">
-            <col class="assessment-answer-col-answer">
-          </colgroup>
+          ${scoreColumns}
           <thead><tr><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="3">No indicators found for this category.</td></tr>'}</tbody>
+          <tbody>
+            ${rows || '<tr><td colspan="3">No indicators found for this category.</td></tr>'}
+            <tr><td><strong>Category Score(Confidence Score)</strong></td><td class="score-cell">${formatScoreSummary(categoryScores, categoryTotalKnown)}</td><td></td></tr>
+          </tbody>
         </table>
       </section>
     `;
@@ -615,7 +645,19 @@ function renderAssessmentDetail(assessmentRow) {
     }
   }
 
-  groupsEl.innerHTML = groupedHtml;
+  if (!categories.length) {
+    Object.entries(scores).forEach(([key, value]) => {
+      if (/^indicator\[\d+\]\[\d+\]$/.test(key)) overallScores.push(value);
+    });
+  }
+  const overallScore = formatScoreSummary(overallScores, overallTotalKnown);
+  groupsEl.innerHTML = `${groupedHtml}
+    <section class="category-box overall-score">
+      <table class="table assessment-answer-table">
+        ${scoreColumns}
+        <tbody><tr><td><strong>Overall Score</strong></td><td class="score-cell">${overallScore}</td><td></td></tr></tbody>
+      </table>
+    </section>`;
 }
 
 async function deleteAdminAssessment(assessmentId) {
