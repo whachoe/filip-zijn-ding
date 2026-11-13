@@ -504,3 +504,85 @@ test('report graphs use a readable palette on light backgrounds', async ({ page 
     expect(contrastWithWhite(color)).toBeGreaterThanOrEqual(3);
   }
 });
+
+test('mobile reports use compact cards, scrollable scores, and readable charts', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await installApiMocks(page);
+  await page.goto('/');
+  await seedAssessments(page, buildAssessmentDefinitions());
+  await page.getByRole('tab', { name: 'Reports' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Assessment scores' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Category overview' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Score comparison' })).toBeVisible();
+  await expect(page.locator('.report-bar-legend li')).toHaveText(['Current', 'Previous 1', 'Previous 2']);
+  await expect.poll(() => page.evaluate(() => window.Chart.getChart('bar-graph')?.scales.y.ticks.length)).toBe(9);
+
+  for (const width of [320, 375, 639]) {
+    await page.setViewportSize({ width, height: 812 });
+    await expect.poll(() => page.evaluate(() => {
+      const chart = window.Chart.getChart('radar-graph');
+      return chart && Math.round(chart.width) === Math.round(chart.canvas.parentElement.clientWidth);
+    })).toBe(true);
+
+    const layout = await page.evaluate(() => {
+      const table = document.querySelector('.report-table-scroll');
+      const radar = window.Chart.getChart('radar-graph');
+      const bar = window.Chart.getChart('bar-graph');
+      return {
+        viewportWidth: document.documentElement.clientWidth,
+        pageWidth: document.documentElement.scrollWidth,
+        tableWidth: table.clientWidth,
+        tableScrollWidth: table.scrollWidth,
+        radarHeight: radar.height,
+        barHeight: bar.height,
+        radarLabels: radar.scales.r._pointLabels,
+        barLabels: bar.scales.y.ticks.map((tick) => tick.label),
+        barValues: bar.scales.x.ticks.map((tick) => tick.label),
+        backgrounds: [radar, bar].map((chart) => getComputedStyle(chart.canvas).backgroundColor),
+        legendColors: [...document.querySelectorAll('.report-legend-swatch')].map((element) => getComputedStyle(element).backgroundColor),
+        barColors: bar.data.datasets.map((dataset) => dataset.backgroundColor)
+      };
+    });
+    expect(layout.pageWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.tableScrollWidth).toBeGreaterThan(layout.tableWidth);
+    expect(layout.radarHeight).toBe(330);
+    expect(layout.barHeight).toBe(390);
+    expect(layout.radarLabels).toEqual(Array.from({ length: 9 }, (_, i) => `Category ${i + 1}`));
+    expect(layout.barLabels).toEqual(Array.from({ length: 9 }, (_, i) => `Category ${i + 1}`));
+    expect(layout.barValues).toContain('100');
+    expect(layout.backgrounds).toEqual(['rgb(245, 246, 241)', 'rgb(245, 246, 241)']);
+    expect(layout.legendColors).toEqual(layout.barColors.map((hex) => {
+      const rgb = hex.slice(1).match(/../g).map((value) => parseInt(value, 16));
+      return `rgb(${rgb.join(', ')})`;
+    }));
+  }
+
+  const table = page.locator('.report-table-scroll');
+  await table.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => table.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+
+  await page.setViewportSize({ width: 900, height: 812 });
+  await expect(page.getByRole('heading', { name: 'Assessment scores' })).toBeHidden();
+  await expect.poll(() => page.evaluate(() => {
+    const radar = window.Chart.getChart('radar-graph');
+    return radar ? radar.scales.r._pointLabels[0].length : 0;
+  })).toBeGreaterThan('Category 1'.length);
+  const desktop = await page.evaluate(() => {
+    const radar = window.Chart.getChart('radar-graph');
+    const bar = window.Chart.getChart('bar-graph');
+    return {
+      firstRadarLabel: radar.scales.r._pointLabels[0],
+      firstBarLabel: bar.scales.y.ticks[0].label,
+      radarRatio: radar.width / radar.height,
+      barRatio: bar.width / bar.height,
+      backgrounds: [radar, bar].map((chart) => getComputedStyle(chart.canvas).backgroundColor)
+    };
+  });
+  expect(desktop.firstRadarLabel.length).toBeGreaterThan('Category 1'.length);
+  expect(desktop.firstBarLabel).toBe(desktop.firstRadarLabel);
+  expect(desktop.radarRatio).toBeCloseTo(1, 1);
+  expect(desktop.barRatio).toBeCloseTo(2, 1);
+  expect(desktop.backgrounds).toEqual(['rgb(255, 255, 255)', 'rgb(255, 255, 255)']);
+});

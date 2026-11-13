@@ -72,22 +72,41 @@
 
     <section id="panel-reports" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-reports" hidden>
       <div class="reports-wrapper">
-        <table id="reports-scoretable">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Current Score (Confidence)</th>
-              <th>Previous 1 Score (Confidence)</th>
-              <th>Previous 2 Score (Confidence)</th>
-            </tr>
-          </thead>
-          <tbody>
+        <section class="report-card">
+          <h2 class="report-card-title">Assessment scores</h2>
+          <p class="report-chart-hint">Scroll sideways to see all scores.</p>
+          <div class="report-table-scroll" role="region" aria-label="Assessment scores" tabindex="0">
+            <table id="reports-scoretable">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Current Score (Confidence)</th>
+                  <th>Previous 1 Score (Confidence)</th>
+                  <th>Previous 2 Score (Confidence)</th>
+                </tr>
+              </thead>
+              <tbody>
 
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <canvas id="radar-graph"></canvas>
-        <canvas id="bar-graph"></canvas>
+        <section class="report-card">
+          <h2 class="report-card-title">Category overview</h2>
+          <p class="report-chart-hint">Category numbers correspond to the score table above.</p>
+          <div class="report-plot report-plot-radar"><canvas id="radar-graph"></canvas></div>
+        </section>
+
+        <section class="report-card">
+          <h2 class="report-card-title">Score comparison</h2>
+          <div class="report-plot report-plot-bar"><canvas id="bar-graph"></canvas></div>
+          <ul class="report-bar-legend" aria-label="Score comparison legend">
+            <li><span class="report-legend-swatch report-legend-current"></span>Current</li>
+            <li><span class="report-legend-swatch report-legend-previous1"></span>Previous 1</li>
+            <li><span class="report-legend-swatch report-legend-previous2"></span>Previous 2</li>
+          </ul>
+        </section>
       </div>
     </section>
 

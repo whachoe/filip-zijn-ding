@@ -1146,6 +1146,7 @@
             type: 'radar',
             data: data,
             options: {
+                maintainAspectRatio: false,
                 scales: {
                     r: {
                         min: 0,
@@ -1159,7 +1160,10 @@
                             color: graphColors.grid
                         },
                         pointLabels: {
-                            color: graphColors.text
+                            color: graphColors.text,
+                            callback: function(label, index) {
+                                return window.matchMedia('(max-width: 639px)').matches ? `Category ${index + 1}` : label;
+                            }
                         },
                         ticks: {
                             stepSize: 10,
@@ -1231,13 +1235,19 @@
             type: 'bar',
             data,
             options: {
+                maintainAspectRatio: false,
                 scales: {
                     x: {
                         ticks: { color: graphColors.text },
                         grid: { color: graphColors.grid }
                     },
                     y: {
-                        ticks: { color: graphColors.text },
+                        ticks: {
+                            color: graphColors.text,
+                            callback: function(value) {
+                                return window.matchMedia('(max-width: 639px)').matches ? `Category ${value + 1}` : this.getLabelForValue(value);
+                            }
+                        },
                         grid: { color: graphColors.grid }
                     }
                 },
