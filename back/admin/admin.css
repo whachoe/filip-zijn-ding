@@ -358,7 +358,7 @@ button.danger {
 }
 
 .assessment-answer-col-indicator {
-  width: 36%;
+  width: 28%;
 }
 
 .assessment-answer-col-score {
@@ -366,6 +366,10 @@ button.danger {
 }
 
 .assessment-answer-col-answer {
+  width: 30%;
+}
+
+.assessment-answer-col-notes {
   width: auto;
 }
 

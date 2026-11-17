@@ -152,6 +152,7 @@ function renderMediaLinks(mediaItems) {
 function renderAssessment(assessmentRow) {
   const assessment = assessmentRow.data || {};
   const scores = assessment.scores || {};
+  const questionNotes = assessment.questionNotes || {};
   const categories = parseJsonMaybe(assessmentRow.categories, []);
   const indicators = parseJsonMaybe(assessmentRow.indicators, []);
   const mediaItems = Array.isArray(assessmentRow.media) ? assessmentRow.media : [];
@@ -186,12 +187,13 @@ function renderAssessment(assessmentRow) {
       const key = `indicator[${categoryIndex}][${indicatorIndex}]`;
       const value = scores[key];
       const n = scoreNumeric(value);
-      const note = assessment.questionNotes && assessment.questionNotes[key];
+      const note = questionNotes[key];
       const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
       rows += `<tr>
         <td>${escapeHtml(indicator.name || `Indicator ${indicatorIndex + 1}`)}</td>
         ${scoreCell}
-        <td>${escapeHtml(scoreDescription(value, indicator))}${note ? `<br><strong>Notes:</strong> <span class="assessment-notes">${escapeHtml(note)}</span>` : ''}</td>
+        <td>${escapeHtml(scoreDescription(value, indicator))}</td>
+        <td class="assessment-notes">${escapeHtml(note || '—')}</td>
       </tr>`;
     });
 
@@ -203,27 +205,29 @@ function renderAssessment(assessmentRow) {
             <col class="assessment-answer-col-indicator">
             <col class="assessment-answer-col-score">
             <col class="assessment-answer-col-answer">
+            <col class="assessment-answer-col-notes">
           </colgroup>
-          <thead><tr><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="3">No indicators found for this category.</td></tr>'}</tbody>
+          <thead><tr><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th><th>Notes</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="4">No indicators found for this category.</td></tr>'}</tbody>
         </table>
       </section>
     `;
   });
 
   if (!groupedHtml) {
-    const scoredEntries = Object.entries(scores);
-    if (scoredEntries.length) {
+    const questionKeys = Array.from(new Set(Object.keys(scores).concat(Object.keys(questionNotes))));
+    if (questionKeys.length) {
       let rows = '';
-      scoredEntries.forEach(([key, val]) => {
+      questionKeys.forEach((key) => {
+        const val = scores[key];
         const parsed = parseScoreIndex(key);
         const categoryLabel = parsed ? `Category ${parsed.categoryIndex + 1}` : 'Unknown Category';
         const indicatorLabel = parsed ? `Indicator ${parsed.indicatorIndex + 1}` : key;
         const n = scoreNumeric(val);
         const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
-        rows += `<tr><td>${escapeHtml(categoryLabel)}</td><td>${escapeHtml(indicatorLabel)}</td>${scoreCell}<td>${escapeHtml(n ? `Score ${n}` : 'Not answered')}</td></tr>`;
+        rows += `<tr><td>${escapeHtml(categoryLabel)}</td><td>${escapeHtml(indicatorLabel)}</td>${scoreCell}<td>${escapeHtml(n ? `Score ${n}` : 'Not answered')}</td><td class="assessment-notes">${escapeHtml(questionNotes[key] || '—')}</td></tr>`;
       });
-      groupedHtml = `<section class="category-box"><h3>Answers</h3><table class="table"><thead><tr><th>Category</th><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+      groupedHtml = `<section class="category-box"><h3>Answers</h3><table class="table"><thead><tr><th>Category</th><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></section>`;
     } else {
       groupedHtml = '<p>No answers found for this assessment.</p>';
     }
