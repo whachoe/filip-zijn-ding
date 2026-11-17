@@ -411,7 +411,7 @@ function buildExportRows(assessments) {
       cat.forEach((_, indX) => {
         const key = `indicator[${catX}][${indX}]`;
         const v = scores[key];
-        scoreValues.push(v != null && v !== '' ? Number(v) : '');
+        scoreValues.push(isNotApplicableScore(v) ? 'Not applicable' : v != null && v !== '' ? Number(v) : '');
       });
     });
 
@@ -523,7 +523,13 @@ function scoreNumeric(v) {
   return n >= 1 && n <= 4 ? n : null;
 }
 
+function isNotApplicableScore(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'na' || normalized === 'not_applicable';
+}
+
 function scoreDescription(v, indicatorDef) {
+  if (isNotApplicableScore(v)) return 'Not applicable';
   const n = scoreNumeric(v);
   if (!n) return 'Not answered';
   if (!indicatorDef || !Array.isArray(indicatorDef.scores)) return `Score ${n}`;
@@ -533,8 +539,11 @@ function scoreDescription(v, indicatorDef) {
 function formatScoreSummary(scoreValues, totalKnown) {
   let scoreTotal = 0;
   let answeredCount = 0;
+  let applicableCount = 0;
 
   scoreValues.forEach((value) => {
+    if (isNotApplicableScore(value)) return;
+    applicableCount++;
     const score = scoreNumeric(value);
     if (score !== null) {
       scoreTotal += score;
@@ -544,7 +553,7 @@ function formatScoreSummary(scoreValues, totalKnown) {
 
   const average = answeredCount ? (scoreTotal / answeredCount).toFixed(0) : '—';
   const confidence = totalKnown && scoreValues.length
-    ? `${Math.round((answeredCount * 100) / scoreValues.length)}%`
+    ? `${applicableCount ? Math.round((answeredCount * 100) / applicableCount) : 0}%`
     : '—';
   return `${average} (${confidence})`;
 }
@@ -612,7 +621,9 @@ function renderAssessmentDetail(assessmentRow) {
       categoryScores.push(value);
       overallScores.push(value);
       const n = scoreNumeric(value);
-      const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
+      const scoreCell = isNotApplicableScore(value)
+        ? '<td class="score-cell score-na">N/A</td>'
+        : n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
       const note = questionNotes[key];
       rows += `<tr><td>${escapeHtml(indicator.name || `Indicator ${indicatorIndex + 1}`)}</td>${scoreCell}<td>${escapeHtml(scoreDescription(value, indicator))}</td><td class="assessment-notes">${escapeHtml(note || '—')}</td></tr>`;
     });
@@ -641,8 +652,10 @@ function renderAssessmentDetail(assessmentRow) {
         const catLabel = match ? `Category ${Number(match[1]) + 1}` : 'Unknown';
         const indLabel = match ? `Indicator ${Number(match[2]) + 1}` : key;
         const n = scoreNumeric(val);
-        const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
-        rows += `<tr><td>${escapeHtml(catLabel)}</td><td>${escapeHtml(indLabel)}</td>${scoreCell}<td>${escapeHtml(n ? `Score ${n}` : 'Not answered')}</td><td class="assessment-notes">${escapeHtml(questionNotes[key] || '—')}</td></tr>`;
+        const scoreCell = isNotApplicableScore(val)
+          ? '<td class="score-cell score-na">N/A</td>'
+          : n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
+        rows += `<tr><td>${escapeHtml(catLabel)}</td><td>${escapeHtml(indLabel)}</td>${scoreCell}<td>${escapeHtml(scoreDescription(val))}</td><td class="assessment-notes">${escapeHtml(questionNotes[key] || '—')}</td></tr>`;
       });
       groupedHtml = `<section class="category-box"><h3>Answers</h3><table class="table"><thead><tr><th>Category</th><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></section>`;
     } else {

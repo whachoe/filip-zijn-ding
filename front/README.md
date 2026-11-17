@@ -53,7 +53,7 @@ Each assessment now includes:
 {
   id: "assessment_YYYYMMDD_HHMMSS",
   contactInfo: { fullName, email, location },
-  scores: { "indicator[X][Y]": scoreValue },
+  scores: { "indicator[X][Y]": scoreValue }, // 1-4 or "na"
   progress: {
     currentQuestionIndex: 0,
     totalQuestions: 60,
@@ -82,6 +82,10 @@ also saves optional assessment-wide notes locally and marks the assessment for
 sync. Both kinds of notes appear in the admin assessment detail after sync.
 The existing attachment uploader still requires a server connection and login;
 it currently accepts images and PDFs only.
+
+Each assessment question also has a final “Not applicable” option. It is excluded
+from the category score and confidence denominator; unanswered applicable questions
+remain in the confidence denominator.
 
 ### Authentication Required
 

@@ -129,7 +129,13 @@ function scoreNumeric(scoreValue) {
   return n >= 1 && n <= 4 ? n : null;
 }
 
+function isNotApplicableScore(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'na' || normalized === 'not_applicable';
+}
+
 function scoreDescription(scoreValue, indicatorDef) {
+  if (isNotApplicableScore(scoreValue)) return 'Not applicable';
   const n = scoreNumeric(scoreValue);
   if (!n) return 'Not answered';
   if (!indicatorDef || !Array.isArray(indicatorDef.scores)) return `Score ${n}`;
@@ -188,7 +194,9 @@ function renderAssessment(assessmentRow) {
       const value = scores[key];
       const n = scoreNumeric(value);
       const note = questionNotes[key];
-      const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
+      const scoreCell = isNotApplicableScore(value)
+        ? '<td class="score-cell score-na">N/A</td>'
+        : n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
       rows += `<tr>
         <td>${escapeHtml(indicator.name || `Indicator ${indicatorIndex + 1}`)}</td>
         ${scoreCell}
@@ -224,8 +232,10 @@ function renderAssessment(assessmentRow) {
         const categoryLabel = parsed ? `Category ${parsed.categoryIndex + 1}` : 'Unknown Category';
         const indicatorLabel = parsed ? `Indicator ${parsed.indicatorIndex + 1}` : key;
         const n = scoreNumeric(val);
-        const scoreCell = n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
-        rows += `<tr><td>${escapeHtml(categoryLabel)}</td><td>${escapeHtml(indicatorLabel)}</td>${scoreCell}<td>${escapeHtml(n ? `Score ${n}` : 'Not answered')}</td><td class="assessment-notes">${escapeHtml(questionNotes[key] || '—')}</td></tr>`;
+        const scoreCell = isNotApplicableScore(val)
+          ? '<td class="score-cell score-na">N/A</td>'
+          : n ? `<td class="score-cell">${n}</td>` : '<td class="score-cell score-empty">—</td>';
+        rows += `<tr><td>${escapeHtml(categoryLabel)}</td><td>${escapeHtml(indicatorLabel)}</td>${scoreCell}<td>${escapeHtml(scoreDescription(val))}</td><td class="assessment-notes">${escapeHtml(questionNotes[key] || '—')}</td></tr>`;
       });
       groupedHtml = `<section class="category-box"><h3>Answers</h3><table class="table"><thead><tr><th>Category</th><th>Indicator</th><th class="score-cell">Score</th><th>Answer</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></section>`;
     } else {

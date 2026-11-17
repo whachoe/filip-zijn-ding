@@ -22,9 +22,9 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     context[render]({
       id: 'assessment',
       categories: ['First'],
-      indicators: [[{ name: 'Question', scores: ['One', 'Two', 'Three', 'Four'] }, { name: 'Unanswered' }, { name: 'No note' }]],
+      indicators: [[{ name: 'Question', scores: ['One', 'Two', 'Three', 'Four'] }, { name: 'Unanswered' }, { name: 'No note' }, { name: 'N/A' }]],
       data: {
-        scores: { 'indicator[0][0]': 1, 'indicator[0][2]': 2 },
+        scores: { 'indicator[0][0]': 1, 'indicator[0][2]': 2, 'indicator[0][3]': 'na' },
         notes: '<script>bad()</script>\nAssessment note',
         questionNotes: { 'indicator[0][0]': '<b>Question note</b>', 'indicator[0][1]': 'Unanswered note' }
       }
@@ -34,6 +34,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     assert.match(elements['assessment-answer-groups'].innerHTML, /<td>One<\/td>\s*<td class="assessment-notes">&lt;b&gt;Question note&lt;\/b&gt;<\/td>/);
     assert.match(elements['assessment-answer-groups'].innerHTML, /<td>Not answered<\/td>\s*<td class="assessment-notes">Unanswered note<\/td>/);
     assert.match(elements['assessment-answer-groups'].innerHTML, /<td class="assessment-notes">—<\/td>/);
+    assert.match(elements['assessment-answer-groups'].innerHTML, /<td class="score-cell score-na">N\/A<\/td>\s*<td>Not applicable<\/td>/);
     assert.doesNotMatch(elements['assessment-meta'].innerHTML, /<script>/);
   });
 
@@ -53,12 +54,12 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     context[render]({
       id: 'assessment',
-      data: { scores: {}, questionNotes: { 'indicator[1][2]': '<img src=x>' } }
+      data: { scores: { 'indicator[1][2]': 'na' }, questionNotes: { 'indicator[1][2]': '<img src=x>' } }
     });
     const html = elements['assessment-answer-groups'].innerHTML;
     assert.match(html, /<th>Notes<\/th>/);
     assert.match(html, /Category 2/);
     assert.match(html, /Indicator 3/);
-    assert.match(html, /<td>Not answered<\/td><td class="assessment-notes">&lt;img src=x&gt;<\/td>/);
+    assert.match(html, /<td class="score-cell score-na">N\/A<\/td><td>Not applicable<\/td><td class="assessment-notes">&lt;img src=x&gt;<\/td>/);
   });
 }

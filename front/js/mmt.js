@@ -606,6 +606,20 @@
                 </label>
               </div>`;
         });
+
+        const notApplicableId = `q-${index}-not-applicable`;
+        html += `
+              <div class="score-option">
+                <input type="radio"
+                       id="${notApplicableId}"
+                       name="${fieldName}"
+                       value="na"
+                       class="score-radio">
+                <label for="${notApplicableId}" class="score-label">
+                  <span class="score-number">N/A</span>
+                  <span class="score-description">Not applicable</span>
+                </label>
+              </div>`;
         
         html += `
             </div>
@@ -1038,16 +1052,22 @@
     function calculate_percentage(scores, catX) {
         let indicators_in_category = indicators[catX];
         let answeredCount = 0;
+        let applicableCount = 0;
         let scoreTotal = 0;
 
         for (i=0; i < indicators_in_category.length; i++) {
             let label = "indicator["+catX+"]["+i+"]";
             let score = scores[label];
-            
-            // Only count answered questions
-            if (score !== undefined && score !== null && score !== '') {
+
+            if (String(score).toLowerCase() === 'na' || String(score).toLowerCase() === 'not_applicable') {
+                continue;
+            }
+
+            applicableCount++;
+            const numericScore = Number(score);
+            if (numericScore >= 1 && numericScore <= 4) {
                 answeredCount++;
-                scoreTotal += parseInt(score);
+                scoreTotal += numericScore;
             }
         }
         
@@ -1058,7 +1078,9 @@
         let percentage = Math.round((scoreTotal * 100) / (4 * answeredCount));
         
         // Calculate confidence (how many questions were answered)
-        let confidence = Math.round((answeredCount * 100) / indicators_in_category.length);
+        let confidence = applicableCount
+            ? Math.round((answeredCount * 100) / applicableCount)
+            : 0;
         
         return { percentage, confidence };
     }
@@ -1574,7 +1596,9 @@
         indicators.forEach((cat, catX) => {            
             cat.forEach((indicator, indX) => {
                 let label = "indicator["+catX+"]["+indX+"]";
-                scoreArray.push(scores[label]);
+                scoreArray.push(String(scores[label]).toLowerCase() === 'na' || String(scores[label]).toLowerCase() === 'not_applicable'
+                    ? 'Not applicable'
+                    : scores[label]);
             });
         });
 

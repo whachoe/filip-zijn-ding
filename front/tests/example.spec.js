@@ -346,6 +346,76 @@ test('allows selecting and deselecting the same assessment score', async ({ page
   expect(savedScore).toBeUndefined();
 });
 
+test('offers Not applicable as the final question option and restores it', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(page.locator('#frontend-welcome-section')).toBeVisible();
+  await page.getByLabel('Full Name').fill('N/A Tester');
+  await page.getByLabel('Email Address').fill(mockUser.email);
+  await page.getByLabel('Location').fill('Market');
+  await page.getByRole('tab', { name: 'Assessment' }).click();
+
+  const options = page.locator('.score-option');
+  const lastOption = options.last();
+  await expect(lastOption.locator('.score-description')).toHaveText('Not applicable');
+  await expect(lastOption.locator('input')).toHaveAttribute('value', 'na');
+  await lastOption.locator('label').click();
+  await expect(lastOption.locator('input')).toBeChecked();
+  const assessmentId = await page.evaluate(() => {
+    const id = Object.keys(localStorage).find((key) => key.startsWith('assessment_'));
+    return { id, score: JSON.parse(localStorage.getItem(id)).scores['indicator[0][0]'] };
+  });
+  expect(assessmentId.score).toBe('na');
+
+  await page.locator('#next-btn').click();
+  await page.locator('#prev-btn').click();
+  await expect(page.locator('.score-option').last().locator('input')).toBeChecked();
+});
+
+test('excludes Not applicable from category score and confidence', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await seedAssessments(page, [{
+    id: 'assessment_20260501_090000',
+    created: '2026-05-01T09:00:00.000Z',
+    scoreValue: '2',
+    synced: true
+  }]);
+
+  const categoryQuestionCount = await page.evaluate(() => {
+    const questionSet = window.getCurrentQuestionSet();
+    const assessmentId = JSON.parse(localStorage.getItem('assessment_list'))[0];
+    const assessment = JSON.parse(localStorage.getItem(assessmentId));
+    const categorySize = questionSet.indicators[0].length;
+    assessment.scores['indicator[0][0]'] = '4';
+    assessment.scores['indicator[0][1]'] = 'na';
+    assessment.scores['indicator[0][2]'] = '';
+    questionSet.indicators[1].forEach((_, index) => {
+      assessment.scores[`indicator[1][${index}]`] = 'na';
+    });
+    localStorage.setItem(assessmentId, JSON.stringify(assessment));
+    window.refreshQuestionnaire();
+    return categorySize;
+  });
+
+  await page.getByRole('tab', { name: 'Reports' }).click();
+  const scoreTotal = 4 + (categoryQuestionCount - 3) * 2;
+  const answeredCount = categoryQuestionCount - 2;
+  const applicableCount = categoryQuestionCount - 1;
+  const expectedPercentage = Math.round((scoreTotal * 100) / (4 * answeredCount));
+  const expectedConfidence = Math.round((answeredCount * 100) / applicableCount);
+  await expect(page.locator('#reports-scoretable tbody tr').nth(0).locator('td').nth(1))
+    .toHaveText(`${expectedPercentage}% (${expectedConfidence}%)`);
+  await expect(page.locator('#reports-scoretable tbody tr').nth(1).locator('td').nth(1))
+    .toHaveText('0% (0%)');
+  const radarValues = await page.evaluate(() => window.Chart.getChart('radar-graph').data.datasets[0].data);
+  expect(radarValues[0]).toBe(expectedPercentage);
+  expect(radarValues[1]).toBe(0);
+});
+
 test('preserves question notes through navigation and saves final assessment notes', async ({ page }) => {
   await installApiMocks(page);
   await page.goto('/');

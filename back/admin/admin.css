@@ -391,6 +391,10 @@ button.danger {
   font-weight: 400;
 }
 
+.score-na {
+  color: var(--muted);
+}
+
 .assessment-notes {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
