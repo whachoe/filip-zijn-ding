@@ -853,6 +853,8 @@
         
         return null;
     }
+
+    window.getIncompleteAssessment = findIncompleteAssessment;
     
     function startNewAssessment() {
         const wrapper = document.getElementById('new_assessment_wrapper');
@@ -864,13 +866,13 @@
         }
 
         // Prefer resuming latest unsynced assessment; otherwise start fresh.
-        const unsyncedAssessment = findLatestUnsyncedAssessment();
-        if (unsyncedAssessment) {
-            currentAssessmentId = unsyncedAssessment.id;
-            const savedIndex = unsyncedAssessment.progress && typeof unsyncedAssessment.progress.currentQuestionIndex === 'number'
-                ? unsyncedAssessment.progress.currentQuestionIndex
+        const assessmentToResume = findIncompleteAssessment() || findLatestUnsyncedAssessment();
+        if (assessmentToResume) {
+            currentAssessmentId = assessmentToResume.id;
+            const savedIndex = assessmentToResume.progress && typeof assessmentToResume.progress.currentQuestionIndex === 'number'
+                ? assessmentToResume.progress.currentQuestionIndex
                 : 0;
-            currentQuestionIndex = getResumeQuestionIndex(unsyncedAssessment, savedIndex);
+            currentQuestionIndex = getResumeQuestionIndex(assessmentToResume, savedIndex);
         } else {
             currentAssessmentId = create_assessment_id();
             currentQuestionIndex = 0;

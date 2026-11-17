@@ -108,6 +108,10 @@ async function updateSyncStatus() {
       syncIcon.title = 'All synced';
     }
   }
+
+  if (typeof window.updateHomeAssessmentPrompt === 'function') {
+    window.updateHomeAssessmentPrompt();
+  }
 }
 
 // Sync all unsynced assessments
@@ -263,6 +267,23 @@ function initSync() {
     });
   }
 }
+
+window.syncAssessments = syncAssessments;
+window.canSyncCompletedAssessments = function() {
+  if (!syncStatus.serverOnline || syncStatus.isSyncing
+      || typeof window.isLoggedIn !== 'function' || !window.isLoggedIn()) {
+    return false;
+  }
+
+  return getUnsyncedAssessments().some((id) => {
+    try {
+      const assessment = JSON.parse(localStorage.getItem(id) || 'null');
+      return !!(assessment && assessment.progress && assessment.progress.completed);
+    } catch (error) {
+      return false;
+    }
+  });
+};
 
 // Run init when DOM is ready
 if (document.readyState === 'loading') {

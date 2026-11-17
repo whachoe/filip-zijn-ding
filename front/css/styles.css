@@ -377,6 +377,28 @@ legend {
   margin-top: 0;
 }
 
+.home-active-assessment {
+  margin: 1.25rem 0 1.25rem;
+  padding: 1.25rem;
+  background: var(--glass);
+  border: 1px solid var(--title);
+  border-radius: 14px;
+}
+
+.home-active-assessment h2 {
+  margin: 0 0 1rem;
+  color: var(--title);
+}
+
+.home-active-assessment .sync-message {
+  margin: 0 0 1rem;
+}
+
+.home-active-assessment .mmt-button.danger {
+  background: var(--warning1);
+  color: var(--bg);
+}
+
 /* Phase 2: Single-question assessment navigation */
 #assessment-container {
   max-width: 800px;

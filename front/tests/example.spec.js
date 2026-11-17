@@ -146,6 +146,52 @@ async function seedPendingAssessmentBeforeLoad(page) {
   });
 }
 
+async function seedHomeAssessmentsBeforeLoad(page, includeCompletedPending = false) {
+  await page.addInitScript((includeCompleted) => {
+    const activeId = 'assessment_20260501_120000';
+    const activeAssessment = {
+      id: activeId,
+      contactInfo: {
+        fullName: 'Active Person',
+        email: 'active@example.com',
+        location: 'Leiden'
+      },
+      scores: {
+        'indicator[0][0]': '3'
+      },
+      created: '2026-05-01T12:00:00.000Z',
+      synced: false,
+      version: 1,
+      progress: {
+        currentQuestionIndex: 1,
+        totalQuestions: 1,
+        completed: false,
+        lastUpdated: '2026-05-01T12:00:00.000Z'
+      },
+      mediaAttachments: [],
+      notes: ''
+    };
+    localStorage.setItem(activeId, JSON.stringify(activeAssessment));
+
+    const assessmentIds = [];
+    if (includeCompleted) {
+      const completedId = 'assessment_20260501_110000';
+      localStorage.setItem(completedId, JSON.stringify({
+        ...activeAssessment,
+        id: completedId,
+        progress: {
+          ...activeAssessment.progress,
+          completed: true,
+          completedAt: '2026-05-01T11:00:00.000Z'
+        }
+      }));
+      assessmentIds.push(completedId);
+    }
+
+    localStorage.setItem('assessment_list', JSON.stringify(assessmentIds));
+  }, includeCompletedPending);
+}
+
 async function seedAssessments(page, definitions) {
   await page.evaluate((items) => {
     const questionSet = window.getCurrentQuestionSet();
@@ -310,6 +356,77 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
 
   const reloadedAssessment = await page.evaluate((id) => JSON.parse(localStorage.getItem(id)), assessmentId);
   expect(reloadedAssessment.synced).toBe(true);
+});
+
+test('Home offers to continue or delete an active assessment after login', async ({ page }) => {
+  await installApiMocks(page);
+  await seedHomeAssessmentsBeforeLoad(page);
+  await page.goto('/');
+
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  const prompt = page.locator('#home-active-assessment');
+  await expect(prompt).toBeVisible();
+  await expect(prompt).toContainText('You still have an active assessment.');
+  await expect(page.locator('#button-assessment')).toHaveCount(0);
+  expect(await prompt.evaluate((element) => element.parentElement.id)).toBe('frontend-welcome-section');
+  expect(await prompt.evaluate((element) => element.previousElementSibling.id)).toBe('settings-form');
+  await expect(page.locator('#send-completed-assessment')).toBeHidden();
+
+  await page.locator('#continue-active-assessment').click();
+  await expect(page.getByRole('tab', { name: 'Assessment' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#progress-text')).toHaveText(/Question 2 of/);
+
+  await page.getByRole('tab', { name: 'Home' }).click();
+  await page.locator('#delete-active-assessment').click();
+  await expect(prompt).toBeHidden();
+  const deletedAssessment = await page.evaluate(() => ({
+    assessment: localStorage.getItem('assessment_20260501_120000'),
+    contactInfo: localStorage.getItem('contactInfo')
+  }));
+  expect(deletedAssessment.assessment).toBeNull();
+  expect(deletedAssessment.contactInfo).not.toBeNull();
+});
+
+test('Home sends a completed pending assessment when sync is available', async ({ page }) => {
+  const server = await installApiMocks(page);
+  await seedHomeAssessmentsBeforeLoad(page, true);
+  await page.goto('/');
+
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  const sendButton = page.locator('#send-completed-assessment');
+  await expect(page.locator('#home-active-assessment')).toBeVisible();
+  await expect(sendButton).toBeVisible();
+  await sendButton.click();
+
+  await expect.poll(() => server.syncRequests.length).toBe(1);
+  expect(server.syncRequests[0].id).toBe('assessment_20260501_110000');
+  await expect(page.locator('#home-assessment-status')).toContainText('Successfully synced 1 assessment.');
+  await expect(sendButton).toBeHidden();
+  const assessments = await page.evaluate(() => ({
+    active: JSON.parse(localStorage.getItem('assessment_20260501_120000')),
+    completed: JSON.parse(localStorage.getItem('assessment_20260501_110000'))
+  }));
+  expect(assessments.active.progress.completed).toBe(false);
+  expect(assessments.completed.synced).toBe(true);
+});
+
+test('Home hides the send action when the server is offline', async ({ page }) => {
+  await installApiMocks(page, { healthOk: false });
+  await seedHomeAssessmentsBeforeLoad(page, true);
+  await page.goto('/');
+
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await expect(page.locator('#home-active-assessment')).toBeVisible();
+  await expect(page.locator('#send-completed-assessment')).toBeHidden();
 });
 
 test('allows selecting and deselecting the same assessment score', async ({ page }) => {

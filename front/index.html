@@ -49,6 +49,17 @@
 
       <section id="frontend-welcome-section">
       <h2>Welcome</h2>
+
+      <section id="home-active-assessment" class="home-active-assessment hidden" aria-labelledby="home-active-assessment-title" hidden>
+        <h2 id="home-active-assessment-title">You still have an active assessment.</h2>
+        <div id="home-assessment-status" class="sync-message" role="status" aria-live="polite" hidden></div>
+        <div class="button-row">
+          <button id="delete-active-assessment" class="mmt-button danger" type="button">Delete</button>
+          <button id="continue-active-assessment" class="mmt-button" type="button">Continue</button>
+          <button id="send-completed-assessment" class="mmt-button hidden" type="button" hidden>Send to server</button>
+        </div>
+      </section>
+
       <p>Fill in the form below to get started with our MMT Assessments.</p>
       <form id="settings-form" class="assessment-form" action="#" onsubmit="return false;" onchange="return save_settings();">
 
@@ -60,8 +71,6 @@
 
         <label for="location">Location</label>
         <input id="location" name="location" type="text" placeholder="Your locality" />
-
-        <button id="button-assessment" tabindex="-1" disabled="true" class="mmt-button hidden">Assessment</button>
     </form>
       </section>
     </section>

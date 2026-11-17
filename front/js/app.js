@@ -5,9 +5,6 @@ function save_settings() {
     const location = document.getElementById('location').value;
 
     const assessmentTab = document.getElementById('tab-assessment');
-    const assessmentButton = document.getElementById('button-assessment');
-    assessmentButton.removeAttribute('hidden');
-
     // Save contact info
     localStorage.setItem('contactInfo', JSON.stringify({
         fullName: fullName,
@@ -17,11 +14,8 @@ function save_settings() {
 
     if(fullName !== '' && email !== '' && location !== '') {
         assessmentTab.removeAttribute('disabled');
-        u(assessmentButton).removeClass('hidden');
-        assessmentButton.removeAttribute('disabled');
     } else {
         assessmentTab.setAttribute('disabled', 'disabled');
-        u(assessmentButton).addClass('hidden');
     }
 }
 
@@ -182,7 +176,30 @@ function updateAuthUI() {
   if (typeof updateSyncStatus === 'function') {
     updateSyncStatus();
   }
+  updateHomeAssessmentPrompt();
 }
+
+function updateHomeAssessmentPrompt() {
+  const prompt = document.getElementById('home-active-assessment');
+  const sendButton = document.getElementById('send-completed-assessment');
+  if (!prompt || !sendButton) return;
+
+  const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+  const activeAssessment = typeof window.getIncompleteAssessment === 'function'
+    ? window.getIncompleteAssessment()
+    : null;
+  const isVisible = !!user && !!activeAssessment;
+
+  prompt.hidden = !isVisible;
+  prompt.classList.toggle('hidden', !isVisible);
+  const canSend = isVisible
+    && typeof window.canSyncCompletedAssessments === 'function'
+    && window.canSyncCompletedAssessments();
+  sendButton.hidden = !canSend;
+  sendButton.classList.toggle('hidden', !canSend);
+}
+
+window.updateHomeAssessmentPrompt = updateHomeAssessmentPrompt;
 
 async function handleLogin() {
   const emailField = document.getElementById('auth-email');
@@ -229,6 +246,92 @@ function initAuthControls() {
     logoutButton.dataset.bound = 'true';
   }
 
+  const deleteActiveAssessmentButton = document.getElementById('delete-active-assessment');
+  if (deleteActiveAssessmentButton && !deleteActiveAssessmentButton.dataset.bound) {
+    deleteActiveAssessmentButton.addEventListener('click', () => {
+      const activeAssessment = typeof window.getIncompleteAssessment === 'function'
+        ? window.getIncompleteAssessment()
+        : null;
+      if (!activeAssessment) {
+        updateHomeAssessmentPrompt();
+        return;
+      }
+
+      try {
+        const storedIds = localStorage.getItem('assessment_list');
+        const parsedIds = storedIds ? JSON.parse(storedIds) : [];
+        const assessmentIds = Array.isArray(parsedIds) ? parsedIds : [];
+        localStorage.removeItem(activeAssessment.id);
+        if (storedIds !== null) {
+          localStorage.setItem('assessment_list', JSON.stringify(assessmentIds.filter((id) => id !== activeAssessment.id)));
+        }
+        const status = document.getElementById('home-assessment-status');
+        if (status) {
+          status.textContent = 'Active assessment deleted.';
+          status.className = 'sync-message info';
+          status.hidden = false;
+        }
+        if (typeof updateTotalRecords === 'function') updateTotalRecords();
+        updateHomeAssessmentPrompt();
+        document.getElementById('tab-home').click();
+      } catch (error) {
+        const status = document.getElementById('home-assessment-status');
+        if (status) {
+          status.textContent = `Could not delete the active assessment: ${error.message}`;
+          status.className = 'sync-message error';
+          status.hidden = false;
+        }
+      }
+    });
+    deleteActiveAssessmentButton.dataset.bound = 'true';
+  }
+
+  const continueActiveAssessmentButton = document.getElementById('continue-active-assessment');
+  if (continueActiveAssessmentButton && !continueActiveAssessmentButton.dataset.bound) {
+    continueActiveAssessmentButton.addEventListener('click', () => {
+      document.getElementById('tab-assessment').click();
+    });
+    continueActiveAssessmentButton.dataset.bound = 'true';
+  }
+
+  const sendCompletedAssessmentButton = document.getElementById('send-completed-assessment');
+  if (sendCompletedAssessmentButton && !sendCompletedAssessmentButton.dataset.bound) {
+    sendCompletedAssessmentButton.addEventListener('click', async () => {
+      if (typeof window.syncAssessments !== 'function') return;
+
+      const status = document.getElementById('home-assessment-status');
+      sendCompletedAssessmentButton.disabled = true;
+      try {
+        const result = await window.syncAssessments();
+        if (status) {
+          const uploadedCount = result.uploaded ? result.uploaded.length : 0;
+          const failedCount = result.failed ? result.failed.length : 0;
+          let message = result.message || 'No completed assessments to sync.';
+          if (uploadedCount > 0 && failedCount > 0) {
+            message = `Synced ${uploadedCount} assessment${uploadedCount > 1 ? 's' : ''}; ${failedCount} failed to sync.`;
+          } else if (uploadedCount > 0) {
+            message = `Successfully synced ${uploadedCount} assessment${uploadedCount > 1 ? 's' : ''}.`;
+          } else if (failedCount > 0) {
+            message = `Could not sync ${failedCount} assessment${failedCount > 1 ? 's' : ''}.`;
+          }
+          status.textContent = message;
+          status.className = `sync-message ${result.success ? 'success' : 'error'}`;
+          status.hidden = false;
+        }
+      } catch (error) {
+        if (status) {
+          status.textContent = `Could not sync assessments: ${error.message}`;
+          status.className = 'sync-message error';
+          status.hidden = false;
+        }
+      } finally {
+        sendCompletedAssessmentButton.disabled = false;
+        updateHomeAssessmentPrompt();
+      }
+    });
+    sendCompletedAssessmentButton.dataset.bound = 'true';
+  }
+
   if (typeof isLoggedIn === 'function' && isLoggedIn()) {
     AuthAPI.getMe()
       .then((data) => {
@@ -263,6 +366,7 @@ window.updateAuthUI = updateAuthUI;
     const id = tab.getAttribute('aria-controls');
     const panel = document.getElementById(id);
     if(panel){ panel.hidden = false; panel.classList.remove('hidden'); }
+    if (tab.id === 'tab-home') updateHomeAssessmentPrompt();
     tab.focus();
   }
 
@@ -312,9 +416,6 @@ window.updateAuthUI = updateAuthUI;
     // });    
   });
 
-  // Make the assessment button activate the assessment tab
-  document.getElementById('button-assessment').addEventListener('click', () => document.getElementById('tab-assessment').click());
-
   // Fill in the contact info form if data exists in localStorage
   const contactInfo = localStorage.getItem('contactInfo');
   if(contactInfo) {
@@ -339,4 +440,3 @@ window.updateAuthUI = updateAuthUI;
   // Initialize account controls
   initAuthControls();
 })();
-

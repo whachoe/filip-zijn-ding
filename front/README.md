@@ -77,6 +77,11 @@ Each assessment now includes:
 2. **Manual Sync**: Navigate to Export tab and click "Send to Server"
 3. **Auto Status**: Online/offline detection updates sync button automatically
 
+When signed in with an unfinished assessment saved on the device, the Home tab
+offers actions to delete it or continue it. If a completed assessment is waiting
+to sync and the server is reachable, Home also offers the same sync operation as
+the Export tab.
+
 Question notes are saved with the assessment as they are entered. The final screen
 also saves optional assessment-wide notes locally and marks the assessment for
 sync. Both kinds of notes appear in the admin assessment detail after sync.
