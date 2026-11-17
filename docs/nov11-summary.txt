@@ -3,7 +3,7 @@ Jo
     [ ] Review and update the landing page and opening market-information pages, using the proposed fields and options in the previous email.
     [x] Review the ending page for notes, photos, and supporting-material uploads.
     [x] Change the output graphs to use a light background.
-    [ ] Add a “Not applicable” option to every assessment question.
+    [x] Add a “Not applicable” option to every assessment question.
     [x] Treat a skipped question as “Don’t know.” We do not need additional standalone “No” or “Not answered” options alongside the existing question-specific responses.
 
 Erik

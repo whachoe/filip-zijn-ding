@@ -1,10 +1,9 @@
 Hi both,
 
 I have compiled all the feedback on the current MMT, together with a few things I noticed when reviewing the question set. Below is everything we need to cover on our call.
-
 Some of this concerns the app itself, some concerns question wording and answer options, and some requires us to agree how we want the assessment and scoring to work. We can go through the list together and assign responsibility for each part.
-
 I have included proposed field options for the opening page so we have something concrete to work from. These are suggestions for us to agree, rather than a final specification.
+
 
 1. Loading page: market identification and assessment details
 
