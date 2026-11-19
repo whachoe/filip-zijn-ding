@@ -68,9 +68,19 @@ Server will run on `http://localhost:3000`
 
 ### Assessments (requires authentication)
 - `GET /api/assessments` - List user's assessments
+- `GET /api/assessments/markets` - List markets created by the signed-in user
 - `GET /api/assessments/:id` - Get specific assessment
 - `POST /api/assessments` - Upload/sync assessment(s)
 - `DELETE /api/assessments/:id` - Delete assessment
+
+Assessment sync links market information to a user-owned market record. New markets
+created offline are matched by normalized market name and location within the
+syncing user's markets; the server assigns the permanent market ID and per-market
+sequence. The market list includes the setting, coordinates, other assessors and
+general market notes from that user's latest assessment of each owned market.
+Existing shared markets remain owned by their original creator; assessments made
+by other users remain attached but do not grant access to reuse the market.
+Run `npm run migrate` after deploying to apply the market-record schema migration.
 
 ### Questions
 - `GET /api/questions/latest` - Get latest question set

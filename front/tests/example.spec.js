@@ -40,7 +40,10 @@ function buildAssessmentDefinitions() {
 async function installApiMocks(page, options = {}) {
   const serverState = {
     healthOk: options.healthOk !== false,
-    syncRequests: []
+    syncRequests: [],
+    mediaRequests: [],
+    events: [],
+    markets: options.markets || []
   };
 
   await page.route('**/api/health', async (route) => {
@@ -60,6 +63,7 @@ async function installApiMocks(page, options = {}) {
         token: 'playwright-token',
         user: {
           ...mockUser,
+          id: payload.email === 'other@example.com' ? 8 : mockUser.id,
           email: payload.email
         }
       })
@@ -67,6 +71,10 @@ async function installApiMocks(page, options = {}) {
   });
 
   await page.route('**/api/auth/me', async (route) => {
+    if (options.authOffline) {
+      await route.abort('failed');
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -82,15 +90,47 @@ async function installApiMocks(page, options = {}) {
     });
   });
 
+  await page.route('**/api/assessments/markets', async (route) => {
+    if (options.marketsOffline) {
+      await route.abort('failed');
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ markets: serverState.markets })
+    });
+  });
+
   await page.route('**/api/assessments', async (route) => {
     const method = route.request().method();
 
     if (method === 'POST') {
-      serverState.syncRequests.push(route.request().postDataJSON());
+      const requestBody = route.request().postDataJSON();
+      const assessments = Array.isArray(requestBody) ? requestBody : [requestBody];
+      serverState.events.push('sync');
+      serverState.syncRequests.push(...assessments);
+      const marketAssignments = assessments.filter((assessment) => assessment.marketInfo).map((assessment, index) => {
+        const market = {
+          id: assessment.marketInfo.marketId || 50 + index,
+          marketName: assessment.marketInfo.marketName,
+          localName: assessment.marketInfo.localName,
+          country: assessment.marketInfo.country,
+          provinceState: assessment.marketInfo.provinceState,
+          district: assessment.marketInfo.district,
+          cityTownVillage: assessment.marketInfo.cityTownVillage
+        };
+        return {
+          assessmentId: assessment.id,
+          marketId: market.id,
+          assessmentSequence: assessment.marketInfo.assessmentSequence || index + 1,
+          market
+        };
+      });
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, uploaded: [route.request().postDataJSON().id] })
+        body: JSON.stringify({ success: true, uploaded: assessments.map((assessment) => assessment.id), marketAssignments })
       });
       return;
     }
@@ -102,7 +142,54 @@ async function installApiMocks(page, options = {}) {
     });
   });
 
+  await page.route('**/api/media', async (route) => {
+    serverState.events.push('media');
+    serverState.mediaRequests.push(route.request().postData() || '');
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ media: { id: 8, filename: 'evidence.jpg', url: '/uploads/evidence.jpg' } })
+    });
+  });
+
   return serverState;
+}
+
+async function completeMarketWizard(page, options = {}) {
+  await page.locator('#market-name').fill(options.marketName || 'Test Market');
+  if (options.localName) await page.locator('#market-local-name').fill(options.localName);
+  await page.locator('#market-wizard-next').click();
+
+  await page.locator('#market-country').fill(options.country || 'Netherlands');
+  if (options.provinceState) await page.locator('#market-province-state').fill(options.provinceState);
+  if (options.district) await page.locator('#market-district').fill(options.district);
+  if (options.cityTownVillage) await page.locator('#market-city-town-village').fill(options.cityTownVillage);
+  await page.locator('#market-setting').selectOption(options.setting || "Don't know");
+  if (options.settingOther) await page.locator('#market-setting-other').fill(options.settingOther);
+  await page.locator('#market-wizard-next').click();
+
+  if (await page.locator('#lead-assessor-name').isEditable()) {
+    await page.locator('#lead-assessor-name').fill(options.leadAssessorName || 'Offline Assessor');
+  }
+  if (options.generalNotes) await page.locator('#market-general-notes').fill(options.generalNotes);
+  await page.locator('#start-market-assessment').click();
+  await expect(page.locator('#question-container')).toBeVisible();
+}
+
+async function login(page) {
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.locator('#login-button').click();
+  await expect(page.locator('#frontend-welcome-section')).toBeVisible();
+}
+
+async function finishAssessmentAtUploadScreen(page, marketName = 'Upload Test Market') {
+  await completeMarketWizard(page, { marketName });
+  const questionCount = await page.evaluate(() => window.getCurrentQuestionSet()
+    .indicators.reduce((total, category) => total + category.length, 0));
+  for (let i = 1; i < questionCount; i++) await page.locator('#next-btn').click();
+  await page.locator('#finish-btn').click();
+  await expect(page.locator('#upload-screen')).toBeVisible();
 }
 
 async function mockLatestQuestionSet(page) {
@@ -151,10 +238,11 @@ async function seedHomeAssessmentsBeforeLoad(page, includeCompletedPending = fal
     const activeId = 'assessment_20260501_120000';
     const activeAssessment = {
       id: activeId,
-      contactInfo: {
-        fullName: 'Active Person',
-        email: 'active@example.com',
-        location: 'Leiden'
+      marketInfo: {
+        marketName: 'Active Market',
+        country: 'Netherlands',
+        assessmentSequence: 1,
+        leadAssessor: { userId: 7, name: 'Frontend Tester', email: 'tester@example.com' }
       },
       scores: {
         'indicator[0][0]': '3'
@@ -304,6 +392,8 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
   const server = await installApiMocks(page);
   await page.goto('/');
   await mockLatestQuestionSet(page);
+  await expect(page.locator('#frontend-login-section')).toBeVisible();
+  await expect(page.locator('#frontend-welcome-section')).toBeHidden();
 
   await page.locator('#auth-email').fill(mockUser.email);
   await page.locator('#auth-password').fill('password123');
@@ -313,13 +403,12 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
   await expect(page.locator('#frontend-login-section')).toBeHidden();
   await expect(page.locator('#frontend-welcome-section')).toBeVisible();
 
-  await expect(page.getByLabel('Full Name')).toHaveValue('Frontend Tester');
-  await expect(page.getByLabel('Email Address')).toHaveValue(mockUser.email);
-  await expect(page.getByLabel('Location')).toHaveValue(mockUser.location);
-
-  await page.getByLabel('Full Name').fill('QA Runner');
-  await page.getByLabel('Location').fill('Test Lab');
-  await page.getByRole('tab', { name: 'Assessment' }).click();
+  await expect(page.locator('#lead-assessor-name')).toHaveValue('Frontend Tester');
+  await completeMarketWizard(page, {
+    marketName: 'QA Market',
+    country: 'Netherlands',
+    cityTownVillage: 'Test Lab'
+  });
   await expect(page.locator('#progress-text')).toHaveText(/Question 1 of/);
   await expect(page.locator('#question-container')).toBeVisible();
 
@@ -330,9 +419,14 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
     return JSON.parse(localStorage.getItem(assessmentId));
   });
 
-  expect(savedDraft.contactInfo.fullName).toBe('QA Runner');
-  expect(savedDraft.contactInfo.email).toBe(mockUser.email);
-  expect(savedDraft.contactInfo.location).toBe('Test Lab');
+  expect(savedDraft.marketInfo.marketName).toBe('QA Market');
+  expect(savedDraft.marketInfo.cityTownVillage).toBe('Test Lab');
+  expect(savedDraft.marketInfo.leadAssessor).toEqual({
+    userId: mockUser.id,
+    name: 'Frontend Tester',
+    email: mockUser.email
+  });
+  expect(savedDraft.contactInfo).toBeUndefined();
   expect(savedDraft.scores['indicator[0][0]']).toBe('1');
   expect(savedDraft.synced).toBe(false);
 
@@ -350,12 +444,34 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
   const syncedAssessment = await page.evaluate((id) => JSON.parse(localStorage.getItem(id)), assessmentId);
   expect(syncedAssessment.synced).toBe(true);
   expect(syncedAssessment.syncedAt).toBeTruthy();
+  expect(syncedAssessment.marketInfo.marketId).toBe(50);
+  expect(syncedAssessment.marketInfo.marketName).toBe('QA Market');
+  expect(syncedAssessment.marketInfo.assessmentSequence).toBe(1);
+  expect(syncedAssessment.marketInfo.id).toBeUndefined();
 
   await page.reload();
   await expect(page.locator('#sync-button')).toHaveText('All Synced');
 
   const reloadedAssessment = await page.evaluate((id) => JSON.parse(localStorage.getItem(id)), assessmentId);
   expect(reloadedAssessment.synced).toBe(true);
+});
+
+test('Home switches between login and welcome on login, reload, and logout', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await expect(page.locator('#frontend-login-section')).toBeVisible();
+  await expect(page.locator('#frontend-welcome-section')).toBeHidden();
+  await login(page);
+  await expect(page.locator('#frontend-login-section')).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#frontend-welcome-section')).toBeVisible();
+  await expect(page.locator('#frontend-login-section')).toBeHidden();
+  await page.locator('#logout-button').click();
+  await expect(page.locator('#frontend-login-section')).toBeVisible();
+  await expect(page.locator('#frontend-welcome-section')).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#frontend-login-section')).toBeVisible();
+  await expect(page.locator('#frontend-welcome-section')).toBeHidden();
 });
 
 test('Home offers to continue or delete an active assessment after login', async ({ page }) => {
@@ -370,9 +486,8 @@ test('Home offers to continue or delete an active assessment after login', async
   const prompt = page.locator('#home-active-assessment');
   await expect(prompt).toBeVisible();
   await expect(prompt).toContainText('You still have an active assessment.');
-  await expect(page.locator('#button-assessment')).toHaveCount(0);
   expect(await prompt.evaluate((element) => element.parentElement.id)).toBe('frontend-welcome-section');
-  expect(await prompt.evaluate((element) => element.previousElementSibling.id)).toBe('settings-form');
+  expect(await prompt.evaluate((element) => element.previousElementSibling.id)).toBe('market-wizard');
   await expect(page.locator('#send-completed-assessment')).toBeHidden();
 
   await page.locator('#continue-active-assessment').click();
@@ -387,7 +502,7 @@ test('Home offers to continue or delete an active assessment after login', async
     contactInfo: localStorage.getItem('contactInfo')
   }));
   expect(deletedAssessment.assessment).toBeNull();
-  expect(deletedAssessment.contactInfo).not.toBeNull();
+  expect(deletedAssessment.contactInfo).toBeNull();
 });
 
 test('Home sends a completed pending assessment when sync is available', async ({ page }) => {
@@ -429,15 +544,275 @@ test('Home hides the send action when the server is offline', async ({ page }) =
   await expect(page.locator('#send-completed-assessment')).toBeHidden();
 });
 
+test('market wizard works offline and saves market information with the assessment', async ({ page }) => {
+  await installApiMocks(page, { healthOk: false, authOffline: true, marketsOffline: true });
+  await page.addInitScript((user) => {
+    localStorage.setItem('jwt_token', 'offline-token');
+    localStorage.setItem('current_user', JSON.stringify(user));
+  }, mockUser);
+  await page.goto('/');
+  await expect(page.locator('#frontend-welcome-section')).toBeVisible();
+
+  await completeMarketWizard(page, {
+    marketName: 'Offline Market',
+    localName: 'Local Name',
+    country: 'Uganda',
+    provinceState: 'Central',
+    district: 'Kampala',
+    cityTownVillage: 'Kampala',
+    setting: 'Other',
+    settingOther: 'Urban/peri-urban edge',
+    generalNotes: 'Main activity is livestock trading.'
+  });
+  await page.locator('.score-label').first().click();
+
+  const saved = await page.evaluate(() => {
+    const id = Object.keys(localStorage).find((key) => key.startsWith('assessment_'));
+    return {
+      assessment: JSON.parse(localStorage.getItem(id)),
+      globalContactInfo: localStorage.getItem('contactInfo')
+    };
+  });
+  expect(saved.assessment.marketInfo).toMatchObject({
+    marketId: null,
+    marketName: 'Offline Market',
+    localName: 'Local Name',
+    country: 'Uganda',
+    provinceState: 'Central',
+    district: 'Kampala',
+    cityTownVillage: 'Kampala',
+    setting: 'Other',
+    settingOther: 'Urban/peri-urban edge',
+    assessmentSequence: 1,
+    generalNotes: 'Main activity is livestock trading.',
+    leadAssessor: { userId: mockUser.id, name: 'Frontend Tester', email: mockUser.email }
+  });
+  expect(saved.assessment.contactInfo).toBeUndefined();
+  expect(saved.globalContactInfo).toBeNull();
+});
+
+test('market wizard requires a setting but accepts an explicit unknown choice', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await login(page);
+
+  await expect(page.locator('[data-market-step="0"]')).toBeVisible();
+  await expect(page.locator('[data-market-step="1"]')).toBeHidden();
+  await expect(page.locator('[data-market-step="2"]')).toBeHidden();
+
+  await page.locator('#market-name').fill('Setting Validation Market');
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('[data-market-step="0"]')).toBeHidden();
+  await expect(page.locator('[data-market-step="1"]')).toBeVisible();
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('#market-wizard-status')).toContainText('Select a market setting');
+  await expect(page.locator('#market-wizard-step-label')).toHaveText('Step 2 of 3');
+
+  await page.locator('#market-setting').selectOption("Don't know");
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('#market-wizard-step-label')).toHaveText('Step 3 of 3');
+});
+
+test('market wizard selects shared markets and previews the next repeat number', async ({ page }) => {
+  await installApiMocks(page, {
+    markets: [{
+      id: 21,
+      marketName: 'Central Market',
+      localName: 'Old Town Market',
+      country: 'Uganda',
+      provinceState: 'Central',
+      district: 'Kampala',
+      cityTownVillage: 'Kampala',
+      setting: 'Other',
+      settingOther: 'Urban edge',
+      latitude: '0.3',
+      longitude: '32.5',
+      otherAssessors: [{ name: 'Previous assessor', organization: 'Health unit' }],
+      generalNotes: 'Previous market details',
+      assessmentCount: 2
+    }]
+  });
+  await page.goto('/');
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.getByRole('button', { name: 'Login' }).click();
+
+  await page.locator('#market-select').selectOption('21');
+  await expect(page.locator('#market-name')).toHaveValue('Central Market');
+  await expect(page.locator('#market-name')).toHaveAttribute('readonly', '');
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('#market-country')).toHaveValue('Uganda');
+  await expect(page.locator('#market-province-state')).toHaveValue('Central');
+  await expect(page.locator('#market-district')).toHaveValue('Kampala');
+  await expect(page.locator('#market-city-town-village')).toHaveValue('Kampala');
+  await expect(page.locator('#market-setting')).toHaveValue('Other');
+  await expect(page.locator('#market-setting-other')).toBeVisible();
+  await expect(page.locator('#market-setting-other')).toHaveValue('Urban edge');
+  await expect(page.locator('#market-latitude')).toHaveValue('0.3');
+  await expect(page.locator('#market-longitude')).toHaveValue('32.5');
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('#assessment-sequence')).toHaveText('Assessment sequence: Repeat 2');
+  await expect(page.locator('#lead-assessor-name')).toHaveValue('Frontend Tester');
+  await expect(page.locator('[name="otherAssessorName"]').first()).toHaveValue('Previous assessor');
+  await expect(page.locator('[name="otherAssessorOrganization"]').first()).toHaveValue('Health unit');
+  await expect(page.locator('#market-general-notes')).toHaveValue('Previous market details');
+  await page.locator('#market-general-notes').fill('Updated for this visit');
+  await page.locator('#start-market-assessment').click();
+  await page.locator('.score-label').first().click();
+
+  const marketInfo = await page.evaluate(() => {
+    const id = Object.keys(localStorage).find((key) => key.startsWith('assessment_'));
+    return JSON.parse(localStorage.getItem(id)).marketInfo;
+  });
+  expect(marketInfo.marketId).toBe(21);
+  expect(marketInfo.assessmentSequence).toBe(3);
+  expect(marketInfo.leadAssessor.userId).toBe(mockUser.id);
+  expect(marketInfo.generalNotes).toBe('Updated for this visit');
+});
+
+test('cached markets prefill all available details offline and switching markets clears stale details', async ({ page }) => {
+  await installApiMocks(page, { healthOk: false, marketsOffline: true });
+  await page.addInitScript(() => {
+    localStorage.setItem('jwt_token', 'offline-token');
+    localStorage.setItem('current_user', JSON.stringify({ id: 7, email: 'tester@example.com' }));
+    localStorage.setItem('market_cache_7', JSON.stringify([{
+      id: 21, marketName: 'Cached Market', localName: 'Local name',
+      country: 'Uganda', provinceState: 'Central', district: 'Kampala', cityTownVillage: 'Kampala',
+      setting: 'Peri-urban', latitude: 0.3, longitude: 32.5,
+      otherAssessors: [{ name: 'First', organization: 'Clinic' }, { name: 'Second', organization: 'Council' }],
+      generalNotes: 'Cached notes', assessmentCount: 2
+    }, {
+      id: 22, marketName: 'Other Market', country: 'Kenya',
+      setting: 'Small town', assessmentCount: 1
+    }]));
+  });
+  await page.goto('/');
+  await page.locator('#market-select').selectOption('21');
+  await page.reload();
+  await expect(page.locator('#market-select')).toHaveValue('21');
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('#market-setting')).toHaveValue('Peri-urban');
+  await expect(page.locator('#market-latitude')).toHaveValue('0.3');
+  await expect(page.locator('#market-longitude')).toHaveValue('32.5');
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('[name="otherAssessorName"]')).toHaveCount(2);
+  await expect(page.locator('[name="otherAssessorName"]').nth(1)).toHaveValue('Second');
+  await expect(page.locator('#market-general-notes')).toHaveValue('Cached notes');
+  await page.locator('#market-wizard-previous').click();
+  await page.locator('#market-wizard-previous').click();
+  await page.locator('#market-select').selectOption('22');
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('#market-setting')).toHaveValue('Small town');
+  await expect(page.locator('#market-latitude')).toHaveValue('');
+  await page.locator('#market-wizard-next').click();
+  await expect(page.locator('[name="otherAssessorName"]')).toHaveCount(1);
+  await expect(page.locator('[name="otherAssessorName"]').first()).toHaveValue('');
+  await expect(page.locator('#market-general-notes')).toHaveValue('');
+});
+
+test('market cache and wizard drafts are isolated across user accounts', async ({ page }) => {
+  await installApiMocks(page, { marketsOffline: true });
+  await page.addInitScript(() => {
+    localStorage.setItem('market_cache', JSON.stringify([{ id: 99, marketName: 'Legacy shared market' }]));
+    localStorage.setItem('market_cache_7', JSON.stringify([{ id: 21, marketName: 'Private market' }]));
+    localStorage.setItem('market_wizard_draft_7', JSON.stringify({ marketId: 21, marketName: 'Private market', generalNotes: 'Private notes' }));
+    localStorage.setItem('market_cache_8', JSON.stringify([{ id: 22, marketName: 'Other market' }]));
+  });
+  await page.goto('/');
+  await expect(page.locator('#market-select option')).toHaveCount(1);
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.locator('#login-button').click();
+  await expect(page.locator('#market-select')).toHaveValue('21');
+  await expect(page.locator('#market-name')).toHaveValue('Private market');
+  await page.locator('#logout-button').click();
+  await expect(page.locator('#market-select option')).toHaveCount(1);
+  await expect(page.locator('#market-name')).toHaveValue('');
+  await page.locator('#auth-email').fill('other@example.com');
+  await page.locator('#auth-password').fill('password123');
+  await page.locator('#login-button').click();
+  await expect(page.locator('#market-select option')).toHaveCount(2);
+  await expect(page.locator('#market-select option').nth(1)).toContainText('Other market');
+  await expect(page.locator('#market-name')).toHaveValue('');
+});
+
+test('retains the signed-in user and their market cache when account refresh is offline', async ({ page }) => {
+  await installApiMocks(page, { healthOk: false, authOffline: true, marketsOffline: true });
+  await page.addInitScript(() => {
+    localStorage.setItem('jwt_token', 'offline-token');
+    localStorage.setItem('current_user', JSON.stringify({ id: 7, email: 'tester@example.com' }));
+    localStorage.setItem('market_cache_7', JSON.stringify([{ id: 21, marketName: 'Cached private market' }]));
+  });
+  await page.goto('/');
+  await expect(page.locator('#market-select option').nth(1)).toContainText('Cached private market');
+  await expect(page.locator('#logout-button')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('jwt_token'))).toBe('offline-token');
+});
+
+test('preserves an anonymous market wizard draft when signing in', async ({ page }) => {
+  await installApiMocks(page, { marketsOffline: true });
+  await page.addInitScript(() => {
+    localStorage.setItem('market_wizard_draft_offline', JSON.stringify({ marketName: 'Offline draft' }));
+  });
+  await page.goto('/');
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.locator('#login-button').click();
+  await expect(page.locator('#market-name')).toHaveValue('Offline draft');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('market_wizard_draft_7')).marketName)).toBe('Offline draft');
+  expect(await page.evaluate(() => localStorage.getItem('market_wizard_draft_offline'))).toBeNull();
+});
+
+test('a sync response cannot cache market details under a different account', async ({ page }) => {
+  await installApiMocks(page, { marketsOffline: true });
+  let releaseResponse;
+  const waitForResponse = new Promise((resolve) => { releaseResponse = resolve; });
+  let requestReceived;
+  const received = new Promise((resolve) => { requestReceived = resolve; });
+  await page.route('**/api/assessments', async (route) => {
+    requestReceived();
+    await waitForResponse;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        uploaded: ['assessment_race'],
+        marketAssignments: [{
+          assessmentId: 'assessment_race', marketId: 21, assessmentSequence: 1,
+          market: { id: 21, marketName: 'First user market' }
+        }]
+      })
+    });
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem('jwt_token', 'user-7');
+    localStorage.setItem('current_user', JSON.stringify({ id: 7, email: 'tester@example.com' }));
+    localStorage.setItem('assessment_race', JSON.stringify({
+      id: 'assessment_race', scores: {}, synced: false,
+      progress: { completed: true }, marketInfo: { marketName: 'First user market' }
+    }));
+    localStorage.setItem('assessment_list', JSON.stringify(['assessment_race']));
+  });
+  await page.goto('/');
+  await page.evaluate(() => { window.raceSync = window.syncAssessments(['assessment_race']); });
+  await received;
+  await page.evaluate(() => {
+    localStorage.setItem('jwt_token', 'user-8');
+    localStorage.setItem('current_user', JSON.stringify({ id: 8, email: 'other@example.com' }));
+  });
+  releaseResponse();
+  await page.evaluate(() => window.raceSync);
+  expect(await page.evaluate(() => localStorage.getItem('market_cache_8'))).toBeNull();
+  const ownerCache = await page.evaluate(() => JSON.parse(localStorage.getItem('market_cache_7')));
+  expect(ownerCache[0].marketName).toBe('First user market');
+});
+
 test('allows selecting and deselecting the same assessment score', async ({ page }) => {
   await installApiMocks(page);
   await page.goto('/');
+  await login(page);
 
-  await page.getByLabel('Full Name').fill('Toggle Tester');
-  await page.getByLabel('Email Address').fill('toggle@example.com');
-  await page.getByLabel('Location').fill('Lab');
-
-  await page.getByRole('tab', { name: 'Assessment' }).click();
+  await completeMarketWizard(page, { marketName: 'Toggle Market' });
   await expect(page.locator('#question-container')).toBeVisible();
 
   const firstScoreLabel = page.locator('.score-label').first();
@@ -470,10 +845,7 @@ test('offers Not applicable as the final question option and restores it', async
   await page.locator('#auth-password').fill('password123');
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page.locator('#frontend-welcome-section')).toBeVisible();
-  await page.getByLabel('Full Name').fill('N/A Tester');
-  await page.getByLabel('Email Address').fill(mockUser.email);
-  await page.getByLabel('Location').fill('Market');
-  await page.getByRole('tab', { name: 'Assessment' }).click();
+  await completeMarketWizard(page, { marketName: 'N/A Market', country: 'Belgium' });
 
   const options = page.locator('.score-option');
   const lastOption = options.last();
@@ -533,6 +905,85 @@ test('excludes Not applicable from category score and confidence', async ({ page
   expect(radarValues[1]).toBe(0);
 });
 
+test('reports the newest in-progress assessment even before it is added to the completed list', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await seedAssessments(page, [{
+    id: 'assessment_20261116_100000',
+    created: '2026-11-16T10:00:00.000Z',
+    scoreValue: '4',
+    synced: true
+  }]);
+
+  await page.evaluate(() => {
+    const id = 'assessment_20261117_171719';
+    const scores = {
+      'indicator[0][0]': '2',
+      'indicator[0][1]': 'na',
+      'indicator[0][2]': '2',
+      'indicator[0][3]': '4',
+      'indicator[0][4]': '1',
+      'indicator[0][5]': '4',
+      'indicator[1][0]': '2',
+      'indicator[1][1]': '3',
+      'indicator[1][2]': '1',
+      'indicator[1][3]': '4',
+      'indicator[1][4]': '2',
+      'indicator[1][5]': '4',
+      'indicator[2][0]': '1',
+      'indicator[2][1]': '3',
+      'indicator[2][2]': '3',
+      'indicator[2][3]': '4',
+      'indicator[2][4]': '1',
+      'indicator[2][5]': '3',
+      'indicator[3][0]': '4',
+      'indicator[3][1]': 'na',
+      'indicator[3][2]': '1',
+      'indicator[3][3]': '3',
+      'indicator[3][4]': '4',
+      'indicator[4][0]': '1',
+      'indicator[4][1]': '3',
+      'indicator[4][2]': '4',
+      'indicator[4][3]': '2',
+      'indicator[4][4]': '1',
+      'indicator[4][5]': '3',
+      'indicator[5][0]': '4',
+      'indicator[5][1]': '1',
+      'indicator[5][2]': '2',
+      'indicator[5][3]': '3',
+      'indicator[5][4]': '1',
+      'indicator[6][0]': '4',
+      'indicator[6][1]': '1',
+      'indicator[6][2]': '3',
+      'indicator[6][3]': '4',
+      'indicator[6][4]': '1',
+      'indicator[7][0]': '2',
+      'indicator[7][1]': '4',
+      'indicator[7][2]': '3',
+      'indicator[7][4]': '1',
+      'indicator[8][0]': '4',
+      'indicator[8][2]': '1',
+      'indicator[8][3]': '4'
+    };
+    localStorage.setItem(id, JSON.stringify({
+      id,
+      created: '2026-11-17T16:17:29.126Z',
+      scores,
+      progress: { currentQuestionIndex: 47, totalQuestions: 49, lastUpdated: '2026-11-17T16:20:25.992Z' },
+      synced: false,
+      version: 3
+    }));
+  });
+
+  await page.getByRole('tab', { name: 'Reports' }).click();
+  const rows = page.locator('#reports-scoretable tbody tr');
+  await expect(rows.nth(0).locator('td').nth(1)).toHaveText('65% (100%)');
+  await expect(rows.nth(1).locator('td').nth(1)).toHaveText('67% (100%)');
+  await expect(rows.nth(7).locator('td').nth(1)).toHaveText('63% (80%)');
+  await expect(rows.nth(8).locator('td').nth(1)).toHaveText('75% (60%)');
+  await expect(rows.nth(0).locator('td').nth(2)).toHaveText('100% (100%)');
+});
+
 test('preserves question notes through navigation and saves final assessment notes', async ({ page }) => {
   await installApiMocks(page);
   await page.goto('/');
@@ -540,10 +991,7 @@ test('preserves question notes through navigation and saves final assessment not
   await page.locator('#auth-password').fill('password123');
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page.locator('#frontend-welcome-section')).toBeVisible();
-  await page.getByLabel('Full Name').fill('Notes Tester');
-  await page.getByLabel('Email Address').fill('notes@example.com');
-  await page.getByLabel('Location').fill('Market');
-  await page.getByRole('tab', { name: 'Assessment' }).click();
+  await completeMarketWizard(page, { marketName: 'Notes Market', country: 'Belgium' });
   const questionNotes = page.getByRole('textbox', { name: 'Notes (optional)' });
   const label = page.locator('label[for="question-notes"]');
   await expect(label).toHaveCSS('opacity', '0');
@@ -576,6 +1024,59 @@ test('preserves question notes through navigation and saves final assessment not
   expect(assessment.questionNotes['indicator[0][1]']).toBe('Second question observation');
   expect(assessment.scores['indicator[0][0]']).toBeUndefined();
   expect(assessment.synced).toBe(false);
+});
+
+test('syncs this assessment before uploading selected files', async ({ page }) => {
+  const server = await installApiMocks(page);
+  await page.goto('/');
+  await page.locator('#auth-email').fill(mockUser.email);
+  await page.locator('#auth-password').fill('password123');
+  await page.locator('#login-button').click();
+  await finishAssessmentAtUploadScreen(page, 'Media Sync Market');
+
+  await page.locator('#upload-file-input').setInputFiles({
+    name: 'evidence.jpg',
+    mimeType: 'image/jpeg',
+    buffer: Buffer.from('evidence')
+  });
+  await page.locator('#upload-btn').click();
+  await expect(page.locator('#upload-status')).toContainText('1 file(s) uploaded');
+
+  expect(server.events).toEqual(['sync', 'media']);
+  expect(server.syncRequests).toHaveLength(1);
+  expect(server.mediaRequests[0]).toContain(server.syncRequests[0].id);
+  const saved = await page.evaluate((id) => JSON.parse(localStorage.getItem(id)), server.syncRequests[0].id);
+  expect(saved.synced).toBe(true);
+  expect(saved.mediaAttachments).toHaveLength(1);
+});
+
+test('keeps the Assessment tab available to return to the supporting-media screen', async ({ page }) => {
+  await installApiMocks(page);
+  await page.goto('/');
+  await login(page);
+  await finishAssessmentAtUploadScreen(page, 'Tab Access Market');
+
+  await page.getByRole('tab', { name: 'Reports' }).click();
+  await page.getByRole('tab', { name: 'Home' }).click();
+  const assessmentTab = page.getByRole('tab', { name: 'Assessment' });
+  await expect(assessmentTab).toBeEnabled();
+  await assessmentTab.click();
+
+  await expect(page.locator('#panel-assessment')).toBeVisible();
+  await expect(page.locator('#upload-screen')).toBeVisible();
+
+  await page.evaluate(() => {
+    const id = JSON.parse(localStorage.getItem('assessment_list')).at(-1);
+    const assessment = JSON.parse(localStorage.getItem(id));
+    delete assessment.mediaUploadPending;
+    localStorage.setItem(id, JSON.stringify(assessment));
+  });
+  await page.reload();
+
+  const reloadedAssessmentTab = page.getByRole('tab', { name: 'Assessment' });
+  await expect(reloadedAssessmentTab).toBeEnabled();
+  await reloadedAssessmentTab.click();
+  await expect(page.locator('#upload-screen')).toBeVisible();
 });
 
 test('renders reports, exports XLSX, and deletes all assessments', async ({ page }) => {

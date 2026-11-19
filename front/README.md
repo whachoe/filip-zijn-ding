@@ -52,7 +52,23 @@ Each assessment now includes:
 ```javascript
 {
   id: "assessment_YYYYMMDD_HHMMSS",
-  contactInfo: { fullName, email, location },
+  marketInfo: {
+    marketId: null, // Assigned when synced; existing server markets can be selected offline from cache
+    marketName: "Market name",
+    localName: "",
+    country: "",
+    provinceState: "",
+    district: "",
+    cityTownVillage: "",
+    setting: "",
+    settingOther: "",
+    latitude: null,
+    longitude: null,
+    leadAssessor: { userId: 7, name: "Assessor name", email: "assessor@example.com" },
+    otherAssessors: [],
+    assessmentSequence: 1,
+    generalNotes: ""
+  },
   scores: { "indicator[X][Y]": scoreValue }, // 1-4 or "na"
   progress: {
     currentQuestionIndex: 0,
@@ -85,12 +101,34 @@ the Export tab.
 Question notes are saved with the assessment as they are entered. The final screen
 also saves optional assessment-wide notes locally and marks the assessment for
 sync. Both kinds of notes appear in the admin assessment detail after sync.
-The existing attachment uploader still requires a server connection and login;
-it currently accepts images and PDFs only.
+The attachment uploader syncs the completed assessment before uploading files,
+then verifies that sync succeeded. It currently accepts images and PDFs only.
+The upload step stays available after a reload until the user chooses to skip
+to Reports.
 
 Each assessment question also has a final “Not applicable” option. It is excluded
 from the category score and confidence denominator; unanswered applicable questions
 remain in the confidence denominator.
+
+The Home tab shows the login form when signed out and the welcome section only
+when signed in. The market-information wizard works offline with a previously
+signed-in account,
+stores the information with the assessment, and uses the signed-in user's profile
+as lead assessor when available. Markets belong to their creators; new offline
+markets are matched or created within that user's markets when assessments are synced, which
+assigns the permanent market ID and sequence number.
+Selecting an existing market prefills its identification and the setting, GPS,
+other assessors and general notes from its latest synced assessment. Review and
+update these details for the new visit. The lead assessor comes from the current
+account, and the next sequence is estimated locally until sync. Previously fetched
+market details are available offline while signed in as the same user. Market
+caches and wizard drafts are separated by account; old shared caches are not
+reused. An anonymous wizard draft is moved to the account on login only if that
+account has no draft already; otherwise it remains available after logout.
+Older unscoped wizard drafts are not reused because their ownership cannot be
+established. Local assessments themselves remain stored on the device and are
+not isolated between accounts on a shared device. Loading the app offline also
+requires its files to be available: there is no service worker.
 
 ### Authentication Required
 

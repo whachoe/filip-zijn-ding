@@ -59,7 +59,9 @@ async function apiRequest(endpoint, options = {}) {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error || `Request failed: ${response.status}`);
+      const error = new Error(data.error || `Request failed: ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
     
     return data;
@@ -108,8 +110,9 @@ const AuthAPI = {
   },
   
   async getMe() {
+    const token = getToken();
     const data = await apiRequest('/api/auth/me');
-    if (data.user) {
+    if (data.user && token && getToken() === token) {
       setCurrentUser(data.user);
     }
     return data;
@@ -137,6 +140,12 @@ const AssessmentAPI = {
     return await apiRequest(`/api/assessments/${id}`, {
       method: 'DELETE'
     });
+  }
+};
+
+const MarketAPI = {
+  async list() {
+    return await apiRequest('/api/assessments/markets');
   }
 };
 
@@ -180,6 +189,7 @@ const MediaAPI = {
 if (typeof window !== 'undefined') {
   window.AuthAPI = AuthAPI;
   window.AssessmentAPI = AssessmentAPI;
+  window.MarketAPI = MarketAPI;
   window.QuestionAPI = QuestionAPI;
   window.MediaAPI = MediaAPI;
 }
@@ -195,6 +205,7 @@ if (typeof module !== 'undefined' && module.exports) {
     setCurrentUser,
     AuthAPI,
     AssessmentAPI,
+    MarketAPI,
     QuestionAPI
   };
 }

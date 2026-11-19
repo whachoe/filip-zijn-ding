@@ -399,6 +399,131 @@ legend {
   color: var(--bg);
 }
 
+.market-wizard {
+  margin: 1.25rem 0;
+  padding: 1.25rem;
+  background: var(--glass);
+  border: 1px solid var(--card);
+  border-radius: 14px;
+}
+
+.market-wizard-progress {
+  margin-bottom: 1.25rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.market-wizard-progress-track {
+  height: 0.5rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: 999px;
+}
+
+#market-wizard-progress-fill {
+  width: 33.333%;
+  height: 100%;
+  background: var(--accent);
+  transition: width 180ms ease;
+}
+
+.market-wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.market-wizard-step[hidden],
+.market-wizard-step.hidden {
+  display: none;
+}
+
+.market-wizard-step h3,
+.market-gps h4 {
+  margin: 0.25rem 0;
+  color: var(--title);
+}
+
+.market-wizard-step label,
+.market-wizard-step legend {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.market-wizard-step input,
+.market-wizard-step select,
+.market-wizard-step textarea {
+  width: 100%;
+  padding: 0.65rem;
+  color: var(--bg);
+  background: var(--muted);
+  border: 1px solid var(--card);
+  border-radius: 8px;
+}
+
+.market-wizard-step input[readonly] {
+  opacity: 0.8;
+}
+
+.market-wizard-help {
+  margin: 0;
+  color: var(--muted);
+}
+
+.market-gps {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.market-assessors {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+  padding: 0;
+  border: 0;
+}
+
+.other-assessor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.other-assessor-row button {
+  padding: 0.5rem;
+  color: var(--bg);
+  background: var(--warning1);
+  border: 0;
+  border-radius: 8px;
+}
+
+.market-sequence {
+  padding: 0.75rem;
+  color: var(--title);
+  background: var(--bg);
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.market-wizard-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.market-wizard-actions .mmt-button {
+  flex: 1;
+  margin-top: 0;
+}
+
+@media(max-width:420px) {
+  .other-assessor-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Phase 2: Single-question assessment navigation */
 #assessment-container {
   max-width: 800px;

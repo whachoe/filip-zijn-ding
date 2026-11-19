@@ -865,8 +865,8 @@
             bindAssessmentNavigationHandlers();
         }
 
-        // Prefer resuming latest unsynced assessment; otherwise start fresh.
-        const assessmentToResume = findIncompleteAssessment() || findLatestUnsyncedAssessment();
+        // Resume an unfinished assessment; completed assessments pending sync do not block a new one.
+        const assessmentToResume = findIncompleteAssessment();
         if (assessmentToResume) {
             currentAssessmentId = assessmentToResume.id;
             const savedIndex = assessmentToResume.progress && typeof assessmentToResume.progress.currentQuestionIndex === 'number'
@@ -913,27 +913,6 @@
         return -1;
     }
 
-    function findLatestUnsyncedAssessment() {
-        const assessmentList = getAssessmentIdsNewestFirst();
-
-        for (let i = assessmentList.length - 1; i >= 0; i--) {
-            const id = assessmentList[i];
-            const data = localStorage.getItem(id);
-            if (!data) continue;
-
-            try {
-                const assessment = JSON.parse(data);
-                if (assessment && assessment.synced === false) {
-                    return assessment;
-                }
-            } catch (error) {
-                // Ignore malformed items and continue scanning.
-            }
-        }
-
-        return null;
-    }
-
     function getAssessmentIdsNewestFirst() {
         let assessmentList = [];
 
@@ -971,6 +950,20 @@
         return merged;
     }
 
+    function findPendingMediaUploadAssessment() {
+        const assessmentIds = getAssessmentIdsNewestFirst();
+        for (const id of assessmentIds) {
+            const assessment = JSON.parse(localStorage.getItem(id) || 'null');
+            if (assessment && assessment.progress && assessment.progress.completed
+                && assessment.mediaUploadPending !== false) {
+                return assessment;
+            }
+        }
+        return null;
+    }
+
+    window.getPendingMediaUploadAssessment = findPendingMediaUploadAssessment;
+
     function getAssessmentProgress() {
         if (!currentAssessmentId) return null;
         const data = localStorage.getItem(currentAssessmentId);
@@ -982,17 +975,15 @@
         if (existing && existing.scores) {
             delete existing.scores[fieldName];
         }
-        const contactForm = document.getElementById('settings-form');
-        const contactData = new FormData(contactForm);
         const assessmentData = {
+            ...(existing || {}),
             id: currentAssessmentId,
-            contactInfo: {
-                fullName: contactData.get('fullName'),
-                email: contactData.get('email'),
-                location: contactData.get('location')
-            },
+            marketInfo: existing && existing.marketInfo
+                ? existing.marketInfo
+                : (typeof window.getCurrentMarketInfo === 'function' ? window.getCurrentMarketInfo() : null),
             scores: existing ? existing.scores : {},
             progress: {
+                ...(existing && existing.progress ? existing.progress : {}),
                 currentQuestionIndex: currentQuestionIndex,
                 totalQuestions: allQuestions.length,
                 lastUpdated: new Date().toISOString()
@@ -1004,6 +995,7 @@
             notes: existing && existing.notes ? existing.notes : "",
             questionNotes: existing && existing.questionNotes ? existing.questionNotes : {}
         };
+        delete assessmentData.contactInfo;
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
     }
 
@@ -1023,19 +1015,15 @@
             else delete questionNotes[key];
         }
         
-        const contactForm = document.getElementById('settings-form');
-        const contactData = new FormData(contactForm);
-        const contactInfo = {
-            fullName: contactData.get('fullName'),
-            email: contactData.get('email'),
-            location: contactData.get('location')
-        };
-        
         const assessmentData = {
+            ...(existing || {}),
             id: currentAssessmentId,
-            contactInfo: contactInfo,
+            marketInfo: existing && existing.marketInfo
+                ? existing.marketInfo
+                : (typeof window.getCurrentMarketInfo === 'function' ? window.getCurrentMarketInfo() : null),
             scores: allScores,
             progress: {
+                ...(existing && existing.progress ? existing.progress : {}),
                 currentQuestionIndex: currentQuestionIndex,
                 totalQuestions: allQuestions.length,
                 lastUpdated: new Date().toISOString()
@@ -1047,6 +1035,7 @@
             notes: existing && existing.notes ? existing.notes : "",
             questionNotes: questionNotes
         };
+        delete assessmentData.contactInfo;
         
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
     }
@@ -1088,15 +1077,10 @@
     }
     
     function generateScoretable() {
-        // Fetch the last 3 assessments
-        let assessmentList = JSON.parse(localStorage.getItem('assessment_list')) || [];
-        // let last3 = assessmentList ? assessmentList.slice(1).slice(-3) : [];
-        // console.log("Last 3:", last3);
-
-        let currentId   = assessmentList.pop();    // newest
-        let previous2Id = assessmentList.pop();    // middle child
-        let previous1Id = assessmentList.pop();    // oldest
-        // console.log(currentId, previous2Id, previous1Id);
+        const assessmentIds = getAssessmentIdsNewestFirst();
+        const currentId = assessmentIds[0];
+        const previous2Id = assessmentIds[1];
+        const previous1Id = assessmentIds[2];
 
         let current   = currentId ? JSON.parse(localStorage.getItem(currentId)) : null;
         let previous2 = previous2Id ? JSON.parse(localStorage.getItem(previous2Id)) : null;
@@ -1330,6 +1314,8 @@
         render_bargraph(scoretable);
     }
 
+    window.refreshReports = refreshReports;
+
     function create_assessment_id(date) {
         const curDate = date || new Date();
 
@@ -1354,13 +1340,17 @@
         // Mark as complete and set final creation date
         assessmentData.progress.completed = true;
         assessmentData.progress.completedAt = new Date().toISOString();
+        assessmentData.mediaUploadPending = true;
         assessmentData.created = new Date().toISOString();
         
         // Add sync flag (not synced yet)
         assessmentData.synced = false;
         assessmentData.version = getCurrentQuestionVersion();
-        
+
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
+        if (typeof window.marketDraftKey === 'function') {
+            localStorage.removeItem(window.marketDraftKey());
+        }
 
         // Add to assessment list if not already there
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list')) || [];
@@ -1409,6 +1399,9 @@
             '  </div>',
             '</div>'
         ].join('');
+        if (typeof window.updateHomeAssessmentPrompt === 'function') {
+            window.updateHomeAssessmentPrompt();
+        }
 
         var fileInput = document.getElementById('upload-file-input');
         var uploadBtn = document.getElementById('upload-btn');
@@ -1442,7 +1435,26 @@
             statusEl.className = 'upload-status ' + (type || 'info');
         }
 
-        skipBtn.addEventListener('click', goToReports);
+        function setMediaUploadResolved() {
+            var stored = JSON.parse(localStorage.getItem(finishedAssessmentId) || 'null');
+            if (!stored) throw new Error('Assessment not found in local storage.');
+            stored.mediaUploadPending = false;
+            localStorage.setItem(finishedAssessmentId, JSON.stringify(stored));
+            if (typeof window.updateHomeAssessmentPrompt === 'function') {
+                window.updateHomeAssessmentPrompt();
+            }
+        }
+
+        skipBtn.addEventListener('click', function() {
+            try {
+                setMediaUploadResolved();
+            } catch (error) {
+                setStatus('Could not save upload progress: ' + error.message, 'error');
+                return;
+            }
+            document.getElementById('upload-screen').remove();
+            goToReports();
+        });
 
         fileInput.addEventListener('change', function() {
             uploadBtn.disabled = fileInput.files.length === 0;
@@ -1520,18 +1532,23 @@
                 doUpload(finishedAssessmentId);
             } else {
                 syncNotice.textContent = 'Syncing assessment to server before uploading…';
-                if (typeof syncAssessments === 'function') {
-                    syncAssessments().then(function(result) {
-                        if (!result.success) {
-                            syncNotice.textContent = '';
-                            setStatus('Could not sync assessment. Please sync first, then retry.', 'error');
-                            uploadBtn.disabled = false;
-                            fileInput.disabled = false;
-                            skipBtn.disabled = false;
-                            return;
+                if (typeof window.syncAssessments === 'function') {
+                    window.syncAssessments([finishedAssessmentId]).then(function(result) {
+                        var syncedAssessment = JSON.parse(localStorage.getItem(finishedAssessmentId) || 'null');
+                        if (!syncedAssessment || !syncedAssessment.synced || !syncedAssessment.syncedAt) {
+                            var failure = result && Array.isArray(result.failed)
+                                ? result.failed.find(function(item) { return item.id === finishedAssessmentId; })
+                                : null;
+                            throw new Error(failure ? failure.error : 'The server did not confirm this assessment was synced.');
                         }
                         syncNotice.textContent = 'Synced. Uploading files…';
                         doUpload(finishedAssessmentId);
+                    }).catch(function(error) {
+                        syncNotice.textContent = '';
+                        setStatus('Could not sync assessment before uploading: ' + error.message, 'error');
+                        uploadBtn.disabled = false;
+                        fileInput.disabled = false;
+                        skipBtn.disabled = false;
                     });
                 } else {
                     syncNotice.textContent = '';
@@ -1556,11 +1573,7 @@
         });
         
         let newAssessment = {
-            contactInfo: {
-                fullName: 'John Doe',
-                email: 'jdoe@fake.com',
-                location: 'New York, USA'
-            },
+            marketInfo: {},
             scores: scores,
             created: curDate.toISOString()
         };
@@ -1610,7 +1623,6 @@
 
     function export_xlsx() {
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-        let globalContactInfoJSON = localStorage.getItem('contactInfo');
         if (!assessmentList) assessmentList = [];
         
         let scores = [];
@@ -1621,8 +1633,13 @@
 
             // Prepare header row for scores sheet
             if (scores.length === 0) {
-                let categoryRow = ['','','',''];
-                let headerRow = ['Date', 'Contact Name', 'Email', 'Location'];
+                let headerRow = [
+                    'Date', 'Market name', 'Alternative/local name', 'Country', 'Province/state',
+                    'District', 'City/town/village', 'Market setting', 'Latitude', 'Longitude',
+                    'Assessment sequence', 'Lead assessor', 'Lead assessor email', 'Other assessors',
+                    'General market notes', 'Assessment notes'
+                ];
+                let categoryRow = Array(headerRow.length).fill('');
                 let startcol = headerRow.length;
 
                 indicators.forEach((cat, catX) => {                                
@@ -1649,8 +1666,34 @@
                 scores.push(headerRow);
             }
 
+            const market = assessment.marketInfo || {};
+            const leadAssessor = market.leadAssessor || {};
+            const otherAssessors = Array.isArray(market.otherAssessors)
+                ? market.otherAssessors.map((assessor) => [assessor.name, assessor.organization].filter(Boolean).join(' — ')).join('; ')
+                : '';
+            const sequence = Number(market.assessmentSequence);
+            const sequenceLabel = sequence === 1
+                ? 'Initial assessment'
+                : sequence > 1 ? `Repeat ${sequence - 1}` : '';
             let scoreRow = scores_to_array(assessment.scores);
-            scoreRow.unshift(assessment.created, assessment.contactInfo.fullName, assessment.contactInfo.email, assessment.contactInfo.location);
+            scoreRow.unshift(
+                assessment.created || '',
+                market.marketName || '',
+                market.localName || '',
+                market.country || '',
+                market.provinceState || '',
+                market.district || '',
+                market.cityTownVillage || '',
+                market.setting === 'Other' && market.settingOther ? `Other: ${market.settingOther}` : market.setting || '',
+                market.latitude == null ? '' : market.latitude,
+                market.longitude == null ? '' : market.longitude,
+                sequenceLabel,
+                leadAssessor.name || '',
+                leadAssessor.email || '',
+                otherAssessors,
+                market.generalNotes || '',
+                assessment.notes || ''
+            );
             scores.push(scoreRow);
         });
 
@@ -1705,6 +1748,13 @@
 
     // Initialize the assessment navigation
     initAssessmentNavigation();
+    const pendingMediaAssessment = findPendingMediaUploadAssessment();
+    if (pendingMediaAssessment) {
+        showUploadScreen(pendingMediaAssessment.id);
+    }
+    if (typeof window.updateHomeAssessmentPrompt === 'function') {
+        window.updateHomeAssessmentPrompt();
+    }
 
     // Comment this line out. only used for testing
     // callNTimes(function() { create_random_assessment(indicators); }, 5, 100);    

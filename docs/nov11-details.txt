@@ -1,3 +1,26 @@
+MMT - Phase 3 
+
+New Requirements 
+Jo
+    [x] Review and update the landing page and opening market-information pages, using the proposed fields and options in the previous email.
+    [x] Review the ending page for notes, photos, and supporting-material uploads.
+    [x] Change the output graphs to use a light background.
+    [x] Add a “Not applicable” option to every assessment question.
+    [x] Treat a skipped question as “Don’t know.” We do not need additional standalone “No” or “Not answered” options alongside the existing question-specific responses.
+    [ ] Add backup scripts for the backend. Backup can be done to the main copywaste server for now. 
+
+Extra fixes/improvements:
+  - Make it more prominent when there's still an unfinished assessment active. 
+  - Upload assets: We first check if we have internet connection and we sync the assessment if it's not sent to the backend yet. 
+  - Market-info: 
+    - Markets are a first-class data-object, linked to 1 or more assessments. They are synced along with the assessment and stored separately. 
+    - The market-info can be reused in future assessments.
+    - We currently do not share market-information among users. So you can only reuse market-info you editted yourself. 
+    - If there's internet connection when the assessment is started, the market-info will be retrieved from the backend. There's fallback on the browser's Localstorage.
+
+
+
+======= Original feedback and new requirements for Phase 3
 Hi both,
 
 I have compiled all the feedback on the current MMT, together with a few things I noticed when reviewing the question set. Below is everything we need to cover on our call.

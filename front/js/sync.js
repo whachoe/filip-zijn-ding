@@ -115,7 +115,7 @@ async function updateSyncStatus() {
 }
 
 // Sync all unsynced assessments
-async function syncAssessments() {
+async function syncAssessments(assessmentIds) {
   // Check if server is reachable
   const serverOnline = await checkServerStatus();
   if (!serverOnline) {
@@ -129,11 +129,24 @@ async function syncAssessments() {
     showSyncMessage('Please login to sync assessments', 'error');
     return { success: false, message: 'Not logged in' };
   }
+  const syncToken = getToken();
+  const syncMarketCacheKey = typeof window.marketCacheKey === 'function' ? window.marketCacheKey() : null;
   
   syncStatus.isSyncing = true;
   await updateSyncStatus();
   
-  const unsyncedIds = getUnsyncedAssessments();
+  const requestedIds = Array.isArray(assessmentIds)
+    ? [...new Set(assessmentIds)]
+    : getUnsyncedAssessments();
+  const unsyncedIds = requestedIds.filter((id) => {
+    try {
+      const assessment = JSON.parse(localStorage.getItem(id) || 'null');
+      return assessment && !assessment.synced;
+    } catch (error) {
+      console.error(`Could not read assessment ${id} before sync:`, error);
+      return false;
+    }
+  });
   
   if (unsyncedIds.length === 0) {
     syncStatus.isSyncing = false;
@@ -151,6 +164,9 @@ async function syncAssessments() {
   for (const id of unsyncedIds) {
     try {
       const assessment = JSON.parse(localStorage.getItem(id));
+      if (getToken() !== syncToken || (typeof window.marketCacheKey === 'function' && window.marketCacheKey() !== syncMarketCacheKey)) {
+        throw new Error('Account changed while syncing; sign in again to continue');
+      }
       
       // Make API call
       const response = await AssessmentAPI.sync(assessment);
@@ -162,6 +178,51 @@ async function syncAssessments() {
       // Mark as synced
       const current = JSON.parse(localStorage.getItem(id) || 'null');
       if (current && JSON.stringify(current) === JSON.stringify(assessment)) {
+        const assignment = Array.isArray(response.marketAssignments)
+          ? response.marketAssignments.find((item) => item.assessmentId === id)
+          : null;
+        if (assignment && current.marketInfo) {
+          if (assignment.market) {
+            current.marketInfo = {
+              ...current.marketInfo,
+              marketId: assignment.marketId,
+              marketName: assignment.market.marketName,
+              localName: assignment.market.localName || '',
+              country: assignment.market.country || '',
+              provinceState: assignment.market.provinceState || '',
+              district: assignment.market.district || '',
+              cityTownVillage: assignment.market.cityTownVillage || '',
+              assessmentSequence: assignment.assessmentSequence
+            };
+            if (!syncMarketCacheKey) throw new Error('Cannot cache market without a signed-in user');
+            const cachedMarkets = JSON.parse(localStorage.getItem(syncMarketCacheKey) || '[]');
+            const markets = Array.isArray(cachedMarkets) ? cachedMarkets : [];
+            const existingIndex = markets.findIndex((market) => Number(market.id) === Number(assignment.market.id));
+            const existingMarket = existingIndex >= 0 ? markets[existingIndex] : null;
+            const useCurrentDetails = !existingMarket
+              || (Number(assignment.assessmentSequence) || 0) >= (Number(existingMarket.assessmentCount) || 0);
+            const details = useCurrentDetails ? current.marketInfo : existingMarket;
+            const updatedMarket = {
+              ...assignment.market,
+              setting: details.setting,
+              settingOther: details.settingOther,
+              latitude: details.latitude,
+              longitude: details.longitude,
+              otherAssessors: details.otherAssessors,
+              generalNotes: details.generalNotes,
+              assessmentCount: Math.max(
+                Number(assignment.assessmentSequence) || 0,
+                existingIndex >= 0 ? Number(markets[existingIndex].assessmentCount) || 0 : 0
+              )
+            };
+            if (existingIndex >= 0) markets[existingIndex] = updatedMarket;
+            else markets.push(updatedMarket);
+            localStorage.setItem(syncMarketCacheKey, JSON.stringify(markets));
+          } else {
+            current.marketInfo.marketId = assignment.marketId;
+            current.marketInfo.assessmentSequence = assignment.assessmentSequence;
+          }
+        }
         current.synced = true;
         current.syncedAt = new Date().toISOString();
         localStorage.setItem(id, JSON.stringify(current));
@@ -180,6 +241,9 @@ async function syncAssessments() {
   
   syncStatus.isSyncing = false;
   await updateSyncStatus();
+  if (typeof refreshSharedMarkets === 'function') {
+    await refreshSharedMarkets();
+  }
   
   // Show result message
   if (results.uploaded.length > 0) {

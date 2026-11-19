@@ -62,4 +62,56 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     assert.match(html, /Indicator 3/);
     assert.match(html, /<td class="score-cell score-na">N\/A<\/td><td>Not applicable<\/td><td class="assessment-notes">&lt;img src=x&gt;<\/td>/);
   });
+
+  test(`${file} displays escaped market information and repeat sequence above answers`, () => {
+    const elements = {
+      'assessment-meta': { innerHTML: '', querySelectorAll: () => [] },
+      'assessment-answer-groups': { innerHTML: '' },
+      'assessment-detail-status': {},
+      'assessment-status': {}
+    };
+    const document = {
+      readyState: 'loading',
+      addEventListener: () => {},
+      getElementById: (id) => elements[id]
+    };
+    const context = vm.createContext({ document, window: { location: { origin: '' } } });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
+    context[render]({
+      id: 'assessment',
+      email: 'account@example.com',
+      categories: ['First'],
+      indicators: [[{ name: 'Question' }]],
+      data: {
+        scores: {},
+        marketInfo: {
+          marketId: 23,
+          marketName: '<img src=x onerror=alert(1)>',
+          localName: 'Local Market',
+          country: 'Uganda',
+          provinceState: 'Central',
+          district: 'Kampala',
+          cityTownVillage: 'Kampala',
+          setting: 'Other',
+          settingOther: 'Urban edge',
+          latitude: 0.3,
+          longitude: 32.5,
+          assessmentSequence: 3,
+          leadAssessor: { userId: 7, name: 'Lead Assessor', email: 'lead@example.com' },
+          otherAssessors: [{ name: 'Second Assessor', organization: 'Health Unit' }],
+          generalNotes: '<script>market note</script>'
+        }
+      }
+    });
+
+    const meta = elements['assessment-meta'].innerHTML;
+    assert.ok(meta.indexOf('Market name:') !== -1);
+    assert.match(meta, /&lt;img src=x onerror=alert\(1\)&gt;/);
+    assert.match(meta, /Assessment sequence:<\/strong> <span>Repeat 2<\/span>/);
+    assert.match(meta, /Other assessors present:<\/strong> <span>Second Assessor — Health Unit<\/span>/);
+    assert.match(meta, /&lt;script&gt;market note&lt;\/script&gt;/);
+    assert.doesNotMatch(meta, /<img src=x/);
+    assert.doesNotMatch(meta, /<script>market note/);
+    assert.match(meta, /User:<\/strong> account@example.com/);
+  });
 }

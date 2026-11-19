@@ -383,10 +383,15 @@ function buildExportRows(assessments) {
   const categories = parseJsonMaybe(first.categories, []);
   const indicators = parseJsonMaybe(first.indicators, []);
 
-  const categoryRow = ['Date', 'Contact Name', 'Email', 'Location'];
-  const headerRow   = ['Date', 'Contact Name', 'Email', 'Location'];
+  const headerRow = [
+    'Date', 'Market name', 'Alternative/local name', 'Country', 'Province/state',
+    'District', 'City/town/village', 'Market setting', 'Latitude', 'Longitude',
+    'Assessment sequence', 'Lead assessor', 'Lead assessor email', 'Other assessors',
+    'General market notes', 'Assessment notes'
+  ];
+  const categoryRow = Array(headerRow.length).fill('');
   const merges = [];
-  let startCol = 4;
+  let startCol = headerRow.length;
 
   indicators.forEach((cat, catX) => {
     const endCol = startCol + cat.length - 1;
@@ -403,8 +408,16 @@ function buildExportRows(assessments) {
   const dataRows = assessments.map((row) => {
     const assessment = row.data || {};
     const scores = assessment.scores || {};
-    const contact = assessment.contactInfo || {};
+    const market = assessment.marketInfo || {};
+    const leadAssessor = market.leadAssessor || {};
     const created = assessment.created_at || assessment.created || row.created_at;
+    const otherAssessors = Array.isArray(market.otherAssessors)
+      ? market.otherAssessors.map((assessor) => [assessor.name, assessor.organization].filter(Boolean).join(' — ')).join('; ')
+      : '';
+    const sequence = Number(market.assessmentSequence);
+    const sequenceLabel = sequence === 1
+      ? 'Initial assessment'
+      : sequence > 1 ? `Repeat ${sequence - 1}` : '';
 
     const scoreValues = [];
     indicators.forEach((cat, catX) => {
@@ -417,9 +430,21 @@ function buildExportRows(assessments) {
 
     return [
       created ? new Date(created).toLocaleString() : '',
-      contact.fullName || '',
-      contact.email || '',
-      contact.location || '',
+      market.marketName || '',
+      market.localName || '',
+      market.country || '',
+      market.provinceState || '',
+      market.district || '',
+      market.cityTownVillage || '',
+      market.setting === 'Other' && market.settingOther ? `Other: ${market.settingOther}` : market.setting || '',
+      market.latitude == null ? '' : market.latitude,
+      market.longitude == null ? '' : market.longitude,
+      sequenceLabel,
+      leadAssessor.name || '',
+      leadAssessor.email || '',
+      otherAssessors,
+      market.generalNotes || '',
+      assessment.notes || '',
       ...scoreValues
     ];
   });
@@ -571,6 +596,51 @@ function renderMediaLinks(mediaItems) {
   }).join('')}</ul>`;
 }
 
+function renderMarketDetails(marketInfo, legacyContactInfo) {
+  if (!marketInfo || typeof marketInfo !== 'object') {
+    return `
+      <strong>Contact Name:</strong> ${escapeHtml(legacyContactInfo.fullName || '—')}<br>
+      <strong>Contact Email:</strong> ${escapeHtml(legacyContactInfo.email || '—')}<br>
+      <strong>Location:</strong> ${escapeHtml(legacyContactInfo.location || '—')}<br>`;
+  }
+
+  const sequence = Number(marketInfo.assessmentSequence);
+  const sequenceLabel = sequence === 1
+    ? 'Initial assessment'
+    : sequence > 1 ? `Repeat ${sequence - 1}` : '—';
+  const setting = marketInfo.setting === 'Other' && marketInfo.settingOther
+    ? `Other: ${marketInfo.settingOther}`
+    : marketInfo.setting || '—';
+  const coordinates = marketInfo.latitude != null && marketInfo.longitude != null
+    ? `${marketInfo.latitude}, ${marketInfo.longitude}`
+    : '—';
+  const leadAssessor = marketInfo.leadAssessor || {};
+  const otherAssessors = Array.isArray(marketInfo.otherAssessors)
+    ? marketInfo.otherAssessors.map((assessor) => [assessor.name, assessor.organization].filter(Boolean).join(' — ')).filter(Boolean).join('; ')
+    : '';
+  const fields = [
+    ['Market ID', marketInfo.marketId],
+    ['Market name', marketInfo.marketName],
+    ['Alternative/local name', marketInfo.localName],
+    ['Country', marketInfo.country],
+    ['Province/state', marketInfo.provinceState],
+    ['District', marketInfo.district],
+    ['City/town/village', marketInfo.cityTownVillage],
+    ['Market setting', setting],
+    ['GPS coordinates', coordinates],
+    ['Lead assessor', leadAssessor.name],
+    ['Lead assessor email', leadAssessor.email],
+    ['Other assessors present', otherAssessors],
+    ['Assessment sequence', sequenceLabel],
+    ['General market notes', marketInfo.generalNotes]
+  ];
+
+  return fields.map(([label, value]) => {
+    const noteClass = label === 'General market notes' ? ' class="assessment-notes"' : '';
+    return `<strong>${escapeHtml(label)}:</strong> <span${noteClass}>${escapeHtml(value || '—')}</span><br>`;
+  }).join('');
+}
+
 function renderAssessmentDetail(assessmentRow) {
   const assessment = assessmentRow.data || {};
   const scores = assessment.scores || {};
@@ -583,6 +653,7 @@ function renderAssessmentDetail(assessmentRow) {
   const groupsEl = document.getElementById('assessment-answer-groups');
 
   const contactInfo = assessment.contactInfo || {};
+  const marketInfo = assessment.marketInfo || null;
   const created = assessment.created_at || assessment.created || assessmentRow.created_at;
   const scoreColumns = `<colgroup>
     <col class="assessment-answer-col-indicator">
@@ -597,9 +668,7 @@ function renderAssessmentDetail(assessmentRow) {
       <strong>User:</strong> ${escapeHtml(assessmentRow.email || assessmentRow.username || 'Unknown')}<br>
       <strong>Question Set Version:</strong> ${escapeHtml(assessmentRow.question_set_version || '—')}<br>
       <strong>Created:</strong> ${escapeHtml(created ? new Date(created).toLocaleString() : '—')}<br>
-      <strong>Contact Name:</strong> ${escapeHtml(contactInfo.fullName || '—')}<br>
-      <strong>Contact Email:</strong> ${escapeHtml(contactInfo.email || '—')}<br>
-      <strong>Location:</strong> ${escapeHtml(contactInfo.location || '—')}<br>
+      ${renderMarketDetails(marketInfo, contactInfo)}
       <strong>Assessment notes:</strong> <span class="assessment-notes">${escapeHtml(assessment.notes || '—')}</span><br>
       ${renderMediaLinks(mediaItems)}
     </div>

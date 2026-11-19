@@ -42,15 +42,104 @@
 
           <div class="button-row">
             <button id="login-button" class="mmt-button" type="button">Login</button>
-            <button id="logout-button" class="mmt-button hidden" type="button" hidden>Logout</button>
           </div>
         </form>
       </section>
 
-      <section id="frontend-welcome-section">
-      <h2>Welcome</h2>
+      <section id="frontend-welcome-section" class="hidden" hidden>
+        <h2>Welcome</h2>
+        <button id="logout-button" class="mmt-button hidden" type="button" hidden>Logout</button>
+        <p>Start by identifying the market for this assessment.</p>
 
-      <section id="home-active-assessment" class="home-active-assessment hidden" aria-labelledby="home-active-assessment-title" hidden>
+        <section id="market-wizard" class="market-wizard" aria-label="Market information">
+          <div class="market-wizard-progress">
+            <span id="market-wizard-step-label">Step 1 of 3</span>
+            <div class="market-wizard-progress-track"><div id="market-wizard-progress-fill"></div></div>
+          </div>
+          <div id="market-wizard-status" class="sync-message" role="status" aria-live="polite" hidden></div>
+
+          <form id="market-wizard-form" novalidate>
+            <section class="market-wizard-step" data-market-step="0">
+              <h3>Identify the market</h3>
+              <label for="market-select">Market</label>
+              <select id="market-select" name="marketId">
+                <option value="">Create a new market</option>
+              </select>
+
+              <label for="market-name">Market name <span aria-hidden="true">*</span></label>
+              <input id="market-name" name="marketName" type="text" autocomplete="organization" required maxlength="255">
+
+              <label for="market-local-name">Alternative or local name</label>
+              <input id="market-local-name" name="localName" type="text" maxlength="255">
+            </section>
+
+            <section class="market-wizard-step hidden" data-market-step="1" hidden>
+              <h3>Location and setting</h3>
+              <label for="market-country">Country</label>
+              <input id="market-country" name="country" type="text" autocomplete="country-name" maxlength="255">
+
+              <label for="market-province-state">Province or state</label>
+              <input id="market-province-state" name="provinceState" type="text" maxlength="255">
+
+              <label for="market-district">District</label>
+              <input id="market-district" name="district" type="text" maxlength="255">
+
+              <label for="market-city-town-village">City, town or village</label>
+              <input id="market-city-town-village" name="cityTownVillage" type="text" maxlength="255">
+
+              <label for="market-setting">Market setting</label>
+              <select id="market-setting" name="setting" required>
+                <option value="">Select a setting</option>
+                <option value="Village/rural settlement">Village/rural settlement</option>
+                <option value="Small town">Small town</option>
+                <option value="Large town/city">Large town/city</option>
+                <option value="Peri-urban">Peri-urban</option>
+                <option value="Other">Other</option>
+                <option value="Don't know">Don't know</option>
+              </select>
+              <div id="market-setting-other-wrap" class="hidden" hidden>
+                <label for="market-setting-other">Specify other setting</label>
+                <input id="market-setting-other" name="settingOther" type="text" maxlength="255">
+              </div>
+
+              <div class="market-gps">
+                <h4>GPS coordinates (optional)</h4>
+                <button id="capture-market-location" class="mmt-button secondary" type="button">Use current location</button>
+                <label for="market-latitude">Latitude</label>
+                <input id="market-latitude" name="latitude" type="number" min="-90" max="90" step="any">
+                <label for="market-longitude">Longitude</label>
+                <input id="market-longitude" name="longitude" type="number" min="-180" max="180" step="any">
+              </div>
+            </section>
+
+            <section class="market-wizard-step hidden" data-market-step="2" hidden>
+              <h3>Assessors and notes</h3>
+              <label for="lead-assessor-name">Lead assessor</label>
+              <input id="lead-assessor-name" name="leadAssessorName" type="text" maxlength="255">
+              <p id="lead-assessor-profile" class="market-wizard-help"></p>
+
+              <fieldset class="market-assessors">
+                <legend>Other assessors present</legend>
+                <div id="other-assessors-list"></div>
+                <button id="add-other-assessor" class="mmt-button secondary" type="button">Add another assessor</button>
+              </fieldset>
+
+              <div id="assessment-sequence" class="market-sequence" role="status"></div>
+
+              <label for="market-general-notes">General market notes</label>
+              <p class="market-wizard-help">Please tell us more about this market and any important location details.</p>
+              <textarea id="market-general-notes" name="generalNotes" rows="4" maxlength="5000"></textarea>
+            </section>
+
+            <div class="market-wizard-actions">
+              <button id="market-wizard-previous" class="mmt-button secondary" type="button" hidden>Previous</button>
+              <button id="market-wizard-next" class="mmt-button" type="button">Next</button>
+              <button id="start-market-assessment" class="mmt-button hidden" type="button" hidden>Start assessment</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="home-active-assessment" class="home-active-assessment hidden" aria-labelledby="home-active-assessment-title" hidden>
         <h2 id="home-active-assessment-title">You still have an active assessment.</h2>
         <div id="home-assessment-status" class="sync-message" role="status" aria-live="polite" hidden></div>
         <div class="button-row">
@@ -58,20 +147,7 @@
           <button id="continue-active-assessment" class="mmt-button" type="button">Continue</button>
           <button id="send-completed-assessment" class="mmt-button hidden" type="button" hidden>Send to server</button>
         </div>
-      </section>
-
-      <p>Fill in the form below to get started with our MMT Assessments.</p>
-      <form id="settings-form" class="assessment-form" action="#" onsubmit="return false;" onchange="return save_settings();">
-
-        <label for="fullName">Full Name</label>
-        <input id="fullName" name="fullName" type="text" placeholder="Your full name" required />
-
-        <label for="email">Email Address</label>
-        <input id="email" name="email" type="email" placeholder="Your e-mail address" />
-
-        <label for="location">Location</label>
-        <input id="location" name="location" type="text" placeholder="Your locality" />
-    </form>
+        </section>
       </section>
     </section>
 

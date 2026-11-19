@@ -155,6 +155,51 @@ function renderMediaLinks(mediaItems) {
   }).join('')}</ul>`;
 }
 
+function renderMarketDetails(marketInfo, legacyContactInfo) {
+  if (!marketInfo || typeof marketInfo !== 'object') {
+    return `
+      <strong>Contact Name:</strong> ${escapeHtml(legacyContactInfo.fullName || '—')}<br>
+      <strong>Contact Email:</strong> ${escapeHtml(legacyContactInfo.email || '—')}<br>
+      <strong>Location:</strong> ${escapeHtml(legacyContactInfo.location || '—')}<br>`;
+  }
+
+  const sequence = Number(marketInfo.assessmentSequence);
+  const sequenceLabel = sequence === 1
+    ? 'Initial assessment'
+    : sequence > 1 ? `Repeat ${sequence - 1}` : '—';
+  const setting = marketInfo.setting === 'Other' && marketInfo.settingOther
+    ? `Other: ${marketInfo.settingOther}`
+    : marketInfo.setting || '—';
+  const coordinates = marketInfo.latitude != null && marketInfo.longitude != null
+    ? `${marketInfo.latitude}, ${marketInfo.longitude}`
+    : '—';
+  const leadAssessor = marketInfo.leadAssessor || {};
+  const otherAssessors = Array.isArray(marketInfo.otherAssessors)
+    ? marketInfo.otherAssessors.map((assessor) => [assessor.name, assessor.organization].filter(Boolean).join(' — ')).filter(Boolean).join('; ')
+    : '';
+  const fields = [
+    ['Market ID', marketInfo.marketId],
+    ['Market name', marketInfo.marketName],
+    ['Alternative/local name', marketInfo.localName],
+    ['Country', marketInfo.country],
+    ['Province/state', marketInfo.provinceState],
+    ['District', marketInfo.district],
+    ['City/town/village', marketInfo.cityTownVillage],
+    ['Market setting', setting],
+    ['GPS coordinates', coordinates],
+    ['Lead assessor', leadAssessor.name],
+    ['Lead assessor email', leadAssessor.email],
+    ['Other assessors present', otherAssessors],
+    ['Assessment sequence', sequenceLabel],
+    ['General market notes', marketInfo.generalNotes]
+  ];
+
+  return fields.map(([label, value]) => {
+    const noteClass = label === 'General market notes' ? ' class="assessment-notes"' : '';
+    return `<strong>${escapeHtml(label)}:</strong> <span${noteClass}>${escapeHtml(value || '—')}</span><br>`;
+  }).join('');
+}
+
 function renderAssessment(assessmentRow) {
   const assessment = assessmentRow.data || {};
   const scores = assessment.scores || {};
@@ -167,6 +212,7 @@ function renderAssessment(assessmentRow) {
   const groupsEl = document.getElementById('assessment-answer-groups');
 
   const contactInfo = assessment.contactInfo || {};
+  const marketInfo = assessment.marketInfo || null;
   const created = assessment.created_at || assessment.created || assessmentRow.created_at;
 
   metaEl.innerHTML = `
@@ -175,9 +221,7 @@ function renderAssessment(assessmentRow) {
       <strong>User:</strong> ${escapeHtml(assessmentRow.email || assessmentRow.username || 'Unknown')}<br>
       <strong>Question Set Version:</strong> ${escapeHtml(assessmentRow.question_set_version || '—')}<br>
       <strong>Created:</strong> ${escapeHtml(created ? new Date(created).toLocaleString() : '—')}<br>
-      <strong>Contact Name:</strong> ${escapeHtml(contactInfo.fullName || '—')}<br>
-      <strong>Contact Email:</strong> ${escapeHtml(contactInfo.email || '—')}<br>
-      <strong>Location:</strong> ${escapeHtml(contactInfo.location || '—')}<br>
+      ${renderMarketDetails(marketInfo, contactInfo)}
       <strong>Assessment notes:</strong> <span class="assessment-notes">${escapeHtml(assessment.notes || '—')}</span><br>
       ${renderMediaLinks(mediaItems)}
     </div>
