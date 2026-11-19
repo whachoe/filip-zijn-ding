@@ -82,6 +82,10 @@ Existing shared markets remain owned by their original creator; assessments made
 by other users remain attached but do not grant access to reuse the market.
 Run `npm run migrate` after deploying to apply the market-record schema migration.
 
+Admin assessment details show an OpenStreetMap map when valid GPS coordinates
+are available. The map requires an internet connection and sends the coordinates
+and viewer's IP address to OpenStreetMap.
+
 ### Questions
 - `GET /api/questions/latest` - Get latest question set
 - `GET /api/questions/:version` - Get specific version

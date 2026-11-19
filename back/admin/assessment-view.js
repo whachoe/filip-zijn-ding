@@ -196,7 +196,8 @@ function renderMarketDetails(marketInfo, legacyContactInfo) {
 
   return fields.map(([label, value]) => {
     const noteClass = label === 'General market notes' ? ' class="assessment-notes"' : '';
-    return `<strong>${escapeHtml(label)}:</strong> <span${noteClass}>${escapeHtml(value || '—')}</span><br>`;
+    const map = label === 'GPS coordinates' ? renderMarketMap(marketInfo) : '';
+    return `<strong>${escapeHtml(label)}:</strong> <span${noteClass}>${escapeHtml(value || '—')}</span><br>${map}`;
   }).join('');
 }
 

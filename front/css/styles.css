@@ -747,6 +747,11 @@ legend {
   transition: height 0.2s ease;
 }
 
+#question-notes:focus {
+  border-color: transparent;
+  outline: none;
+}
+
 .question-notes:focus-within label {
   max-height: 2rem;
   opacity: 1;

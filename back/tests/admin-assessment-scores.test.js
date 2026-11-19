@@ -16,6 +16,7 @@ function renderAssessment(row) {
     getElementById: (id) => elements[id]
   };
   const context = vm.createContext({ document, window: { location: { origin: '' } } });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
   const source = fs.readFileSync(path.join(__dirname, '../admin/admin.js'), 'utf8');
   vm.runInContext(source, context);
   context.renderAssessmentDetail(row);

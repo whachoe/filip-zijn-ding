@@ -18,6 +18,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
       getElementById: (id) => elements[id]
     };
     const context = vm.createContext({ document, window: { location: { origin: '' } } });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     context[render]({
       id: 'assessment',
@@ -51,6 +52,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
       getElementById: (id) => elements[id]
     };
     const context = vm.createContext({ document, window: { location: { origin: '' } } });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     context[render]({
       id: 'assessment',
@@ -76,6 +78,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
       getElementById: (id) => elements[id]
     };
     const context = vm.createContext({ document, window: { location: { origin: '' } } });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     context[render]({
       id: 'assessment',
@@ -113,5 +116,34 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     assert.doesNotMatch(meta, /<img src=x/);
     assert.doesNotMatch(meta, /<script>market note/);
     assert.match(meta, /User:<\/strong> account@example.com/);
+    assert.match(meta, /<iframe title="Market location map"[^>]+marker=0\.3,32\.5/);
+  });
+
+  test(`${file} only displays a map for valid GPS coordinates`, () => {
+    const elements = {
+      'assessment-meta': { innerHTML: '', querySelectorAll: () => [] },
+      'assessment-answer-groups': { innerHTML: '' },
+      'assessment-detail-status': {},
+      'assessment-status': {}
+    };
+    const document = {
+      readyState: 'loading',
+      addEventListener: () => {},
+      getElementById: (id) => elements[id]
+    };
+    const context = vm.createContext({ document, window: { location: { origin: '' } } });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
+    function renderCoordinates(latitude, longitude) {
+      context[render]({ id: 'assessment', data: { scores: {}, marketInfo: { latitude, longitude } } });
+      return elements['assessment-meta'].innerHTML;
+    }
+
+    assert.match(renderCoordinates(0, 0), /marker=0,0/);
+    assert.match(renderCoordinates('51.236', '-4.42'), /marker=51\.236,-4\.42/);
+    for (const [latitude, longitude] of [[null, 1], ['', 1], [1, undefined], [91, 1], [1, 181], ['1" onload="bad()', 1]]) {
+      assert.doesNotMatch(renderCoordinates(latitude, longitude), /<iframe/);
+    }
+    assert.match(renderCoordinates(90, 0), /Map unavailable for these coordinates/);
   });
 }

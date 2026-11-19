@@ -997,6 +997,8 @@ test('preserves question notes through navigation and saves final assessment not
   await expect(label).toHaveCSS('opacity', '0');
   const collapsedHeight = (await questionNotes.boundingBox()).height;
   await questionNotes.focus();
+  await expect(questionNotes).toHaveCSS('outline-style', 'none');
+  await expect(questionNotes).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
   await expect(label).toHaveCSS('opacity', '1');
   await expect.poll(async () => (await questionNotes.boundingBox()).height).toBeGreaterThan(collapsedHeight + 20);
   await questionNotes.fill('First question observation');
