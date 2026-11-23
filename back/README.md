@@ -90,6 +90,11 @@ and viewer's IP address to OpenStreetMap.
 - `GET /api/questions/latest` - Get latest question set
 - `GET /api/questions/:version` - Get specific version
 
+In the admin Question Editor, each indicator can have an optional notes label.
+Publishing stores it as `notesLabel` in the new question version, where the
+frontend uses it as the notes placeholder. Leaving it blank uses the default
+placeholder, “Notes (optional)”.
+
 ### Media (requires authentication)
 - `POST /api/media` - Upload file
 - `GET /api/media/:id` - Download file

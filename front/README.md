@@ -110,6 +110,11 @@ Each assessment question also has a final “Not applicable” option. It is exc
 from the category score and confidence denominator; unanswered applicable questions
 remain in the confidence denominator.
 
+Question versions can specify an optional `notesLabel` for each indicator's
+notes placeholder. If it is missing or blank, the placeholder is “Notes
+(optional)”. The field label is always “Add notes (optional)”. Published
+placeholders are cached with the question set for offline use.
+
 The Home tab shows the login form when signed out and the welcome section only
 when signed in. The market-information wizard works offline with a previously
 signed-in account,

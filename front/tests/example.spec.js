@@ -758,6 +758,7 @@ test('preserves an anonymous market wizard draft when signing in', async ({ page
   await page.locator('#auth-email').fill(mockUser.email);
   await page.locator('#auth-password').fill('password123');
   await page.locator('#login-button').click();
+  await expect(page.locator('#frontend-welcome-section')).toBeVisible();
   await expect(page.locator('#market-name')).toHaveValue('Offline draft');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('market_wizard_draft_7')).marketName)).toBe('Offline draft');
   expect(await page.evaluate(() => localStorage.getItem('market_wizard_draft_offline'))).toBeNull();
@@ -992,7 +993,7 @@ test('preserves question notes through navigation and saves final assessment not
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page.locator('#frontend-welcome-section')).toBeVisible();
   await completeMarketWizard(page, { marketName: 'Notes Market', country: 'Belgium' });
-  const questionNotes = page.getByRole('textbox', { name: 'Notes (optional)' });
+  const questionNotes = page.getByRole('textbox', { name: 'Add notes (optional)' });
   const label = page.locator('label[for="question-notes"]');
   await expect(label).toHaveCSS('opacity', '0');
   const collapsedHeight = (await questionNotes.boundingBox()).height;

@@ -7,7 +7,9 @@ Jo
     [x] Change the output graphs to use a light background.
     [x] Add a “Not applicable” option to every assessment question.
     [x] Treat a skipped question as “Don’t know.” We do not need additional standalone “No” or “Not answered” options alongside the existing question-specific responses.
+    [partly] Add an 'Extra notes' field to each question, with the text of the label being editable using the Query Editor.
     [ ] Add backup scripts for the backend. Backup can be done to the main copywaste server for now. 
+    [ ] Staging server with automatic data import from production - limited to specific users. Can be done on the main copywaste server. 
 
 Extra fixes/improvements:
   - Make it more prominent when there's still an unfinished assessment active. 

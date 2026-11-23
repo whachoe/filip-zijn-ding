@@ -753,7 +753,7 @@ legend {
 }
 
 .question-notes:focus-within label {
-  max-height: 2rem;
+  max-height: none;
   opacity: 1;
 }
 

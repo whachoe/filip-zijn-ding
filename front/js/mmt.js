@@ -509,6 +509,7 @@
     window.getCurrentQuestionSet = getCurrentQuestionSet;
 
     function refreshQuestionnaire() {
+        applyStoredQuestionSet();
         document.getElementById('new_assessment_wrapper').innerHTML = generate_assessment_form(categories, indicators);
         initAssessmentNavigation();
         refreshReports();
@@ -528,7 +529,8 @@
                     categoryName: category,
                     indicatorIndex: indIdx,
                     indicatorName: indicator.name,
-                    scores: indicator.scores
+                    scores: indicator.scores,
+                    notesLabel: indicator.notesLabel
                 });
             });
         });
@@ -624,8 +626,8 @@
         html += `
             </div>
             <div class="question-notes">
-              <label for="question-notes">Notes (optional)</label>
-              <textarea id="question-notes" rows="1" placeholder="Add notes (optional)"></textarea>
+              <label for="question-notes">Add notes (optional)</label>
+              <textarea id="question-notes" rows="1" placeholder="Notes (optional)"></textarea>
             </div>
             <p id="question-notes-status" role="status"></p>
           </fieldset>`;
@@ -635,6 +637,8 @@
         // Restore previously saved answer if exists
         const savedAnswer = getAssessmentProgress();
         const noteInput = document.getElementById('question-notes');
+        noteInput.placeholder = typeof question.notesLabel === 'string' && question.notesLabel.trim()
+            ? question.notesLabel.trim() : 'Notes (optional)';
         noteInput.value = savedAnswer && savedAnswer.questionNotes ? savedAnswer.questionNotes[fieldName] || '' : '';
         noteInput.addEventListener('input', function() {
             const status = document.getElementById('question-notes-status');

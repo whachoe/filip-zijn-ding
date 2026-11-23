@@ -790,6 +790,8 @@ function renderQuestionEditor(questionSet) {
         <input class="indicator-name" type="text" value="${escapeHtml(indicator.name || '')}">
         <label>Scores (one per line)</label>
         <textarea class="score-lines" rows="5">${escapeHtml((indicator.scores || []).join('\n'))}</textarea>
+        <label for="notes-label-${catIdx}-${indIdx}">Notes label (optional)</label>
+        <input id="notes-label-${catIdx}-${indIdx}" class="notes-label" type="text" value="${escapeHtml(indicator.notesLabel || '')}" placeholder="Notes (optional)">
         <div class="inline-actions">
           <button class="secondary" type="button" data-action="remove-indicator" data-cat-index="${catIdx}" data-ind-index="${indIdx}">Remove Indicator</button>
         </div>
@@ -818,6 +820,7 @@ function readEditor(strict) {
     indicatorEls.forEach((indicatorEl, indIdx) => {
       const name = indicatorEl.querySelector('.indicator-name').value.trim() || `Indicator ${indIdx + 1}`;
       const scoreLines = indicatorEl.querySelector('.score-lines').value.split('\n').map((line) => line.trim()).filter(Boolean);
+      const notesLabel = indicatorEl.querySelector('.notes-label').value.trim();
 
       if (strict && scoreLines.length !== 4) {
         throw new Error(`Indicator "${name}" must have exactly 4 score lines.`);
@@ -827,7 +830,7 @@ function readEditor(strict) {
         scoreLines.push(`Score ${scoreLines.length + 1}`);
       }
 
-      indicators[catIdx].push({ name, scores: scoreLines.slice(0, 4) });
+      indicators[catIdx].push({ name, scores: scoreLines.slice(0, 4), notesLabel });
     });
   });
 
