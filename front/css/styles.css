@@ -657,6 +657,14 @@ legend {
   margin-top: 2rem;
 }
 
+#mobile-test-controls {
+  margin-top: 1rem;
+}
+
+#mobile-test-fill {
+  width: 100%;
+}
+
 .nav-btn {
   flex: 1;
   background-color: var(--accent);

@@ -9,6 +9,7 @@ const assessmentRoutes = require('./routes/assessments');
 const questionRoutes = require('./routes/questions');
 const mediaRoutes = require('./routes/media');
 const adminRoutes = require('./routes/admin');
+const testModeRouter = require('./routes/test-mode');
 
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
@@ -31,6 +32,7 @@ app.use('/api/assessments', authenticateToken, assessmentRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/media', authenticateToken, mediaRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
+app.use('/api/test-mode', testModeRouter(process.env.MMT_TEST_MODE === '1'));
 
 // Health check
 app.get('/api/health', (req, res) => {

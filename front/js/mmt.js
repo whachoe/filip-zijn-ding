@@ -545,6 +545,28 @@
     let swipeStartX = 0;
     let swipeStartY = 0;
     let swipeStartTime = 0;
+    let mobileTestMode = false;
+
+    async function initMobileTestMode() {
+        if (new URLSearchParams(window.location.search).get('test') !== '1') return;
+        const key = 'mmt_mobile_test_mode';
+        try {
+            const response = await fetch('/api/test-mode', { cache: 'no-store' });
+            if (!response.ok) {
+                sessionStorage.removeItem(key);
+                return;
+            }
+            const result = await response.json();
+            mobileTestMode = result.enabled === true;
+            if (mobileTestMode) sessionStorage.setItem(key, '1');
+            else sessionStorage.removeItem(key);
+        } catch (error) {
+            mobileTestMode = sessionStorage.getItem(key) === '1';
+            console.warn('Could not check mobile test mode:', error);
+        }
+        const controls = document.getElementById('mobile-test-controls');
+        if (controls) controls.hidden = !mobileTestMode;
+    }
 
     function generate_assessment_form(categories, indicators) {
         allQuestions = buildQuestionList(categories, indicators);
@@ -566,6 +588,10 @@
             <!-- Question Display -->
             <form id="assessment-form">
               <div id="question-container"></div>
+              <div id="mobile-test-controls" ${mobileTestMode ? '' : 'hidden'}>
+                <button type="button" id="mobile-test-fill" class="nav-btn">Test: fill unanswered and jump to end</button>
+                <p id="mobile-test-status" role="status" aria-live="polite"></p>
+              </div>
               
               <!-- Navigation Buttons -->
               <div class="question-nav">
@@ -837,7 +863,48 @@
             save_assessment();
         });
 
+        document.getElementById('mobile-test-fill').addEventListener('click', fillSampleAnswers);
         bindSwipeNavigation();
+    }
+
+    function fillSampleAnswers() {
+        const status = document.getElementById('mobile-test-status');
+        if (!mobileTestMode) return;
+        try {
+            if (!allQuestions.length) throw new Error('No questions are available.');
+            const existing = getAssessmentProgress();
+            saveProgress((assessment) => {
+                if (existing && existing.version != null) assessment.version = existing.version;
+                const unanswered = allQuestions.filter((question) => {
+                    const key = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
+                    return !Object.prototype.hasOwnProperty.call(assessment.scores, key)
+                        || assessment.scores[key] === '' || assessment.scores[key] == null;
+                });
+                const naIndex = unanswered.length ? Math.floor(Math.random() * unanswered.length) : -1;
+                const noteCandidates = unanswered.filter((question) => {
+                    const key = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
+                    return !Object.prototype.hasOwnProperty.call(assessment.questionNotes, key);
+                });
+                const noteIndex = noteCandidates.length ? Math.floor(Math.random() * noteCandidates.length) : -1;
+                unanswered.forEach((question, index) => {
+                    const key = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
+                    assessment.scores[key] = index === naIndex || Math.random() < 0.1
+                        ? 'na' : String(1 + Math.floor(Math.random() * 4));
+                });
+                noteCandidates.forEach((question, index) => {
+                    if (index === noteIndex || Math.random() < 0.2) {
+                        const key = `indicator[${question.categoryIndex}][${question.indicatorIndex}]`;
+                        assessment.questionNotes[key] = 'Sample observation for testing.';
+                    }
+                });
+                assessment.progress.currentQuestionIndex = allQuestions.length - 1;
+            });
+            navigateToQuestion(allQuestions.length - 1);
+            status.textContent = 'Sample answers saved. Review and finish the assessment when ready.';
+        } catch (error) {
+            status.textContent = `Could not prepare sample answers: ${error.message}`;
+            console.error('Could not prepare sample answers:', error);
+        }
     }
     
     function findIncompleteAssessment() {
@@ -1003,7 +1070,7 @@
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
     }
 
-    function saveProgress() {
+    function saveProgress(updateAssessment) {
         const formData = new FormData(document.getElementById('assessment-form'));
         const scores = Object.fromEntries(formData.entries());
         
@@ -1040,6 +1107,8 @@
             questionNotes: questionNotes
         };
         delete assessmentData.contactInfo;
+
+        if (updateAssessment) updateAssessment(assessmentData);
         
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
     }
@@ -1752,6 +1821,7 @@
 
     // Initialize the assessment navigation
     initAssessmentNavigation();
+    initMobileTestMode();
     const pendingMediaAssessment = findPendingMediaUploadAssessment();
     if (pendingMediaAssessment) {
         showUploadScreen(pendingMediaAssessment.id);

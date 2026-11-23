@@ -89,6 +89,43 @@ Each assessment now includes:
 
 ### Usage
 
+#### Testing on Firefox for Android
+
+1. Connect the phone and Mac to the same **trusted** Wi-Fi network. On the Mac,
+   configure the backend and database as described in [the backend README](../back/README.md),
+   then start the backend from the `back` directory with test mode enabled:
+   ```bash
+   MMT_TEST_MODE=1 npm run dev
+   ```
+2. Find the Mac's Wi-Fi IP address with `ipconfig getifaddr en0` (if Wi-Fi uses
+   a different interface, check Network settings). On the phone, open
+   `http://<mac-ip>:3000/?test=1`, replacing `<mac-ip>` with that address and
+   `3000` with `PORT` if configured differently. Allow incoming connections in
+   the Mac firewall if necessary. The backend serves both the app and API;
+   the frontend-only test server cannot sync.
+3. Sign in, complete the market wizard, then tap **Test: fill unanswered and
+   jump to end** on the assessment screen. It preserves existing answers and
+   notes, fills unanswered questions with sample scores including N/A and
+   sample notes, and opens the last question. Tap **Finish Assessment** to
+   proceed to media, then use the normal sync action. Uploading media may also
+   sync the assessment first. These are real records in the configured database.
+4. To disable the shortcut, restart the backend without `MMT_TEST_MODE=1` or
+   open the app without `?test=1`. The flag and URL are conveniences, not
+   access controls; never enable this mode on a public server.
+
+An unfinished test assessment can be removed with **Delete** on Home. A synced
+test record can be deleted individually in the admin **Synced Assessments**
+list; this does not remove its local copy. The Export tab's **Delete all
+Assessments** clears all local data, including account data, so use it only if
+you intend to remove everything on that device.
+
+Plain HTTP exposes login credentials and assessment data to the local network.
+Use only a trusted network and a suitable test account. Test mode remains
+available in the same tab during a temporary offline period after initial
+activation, but fresh offline loads are not guaranteed: there is no service
+worker. Device GPS generally requires a secure connection; HTTPS/GPS setup is
+outside this shortcut.
+
 1. **Normal Operation**: Continue using the app offline as usual
 2. **Manual Sync**: Navigate to Export tab and click "Send to Server"
 3. **Auto Status**: Online/offline detection updates sync button automatically
