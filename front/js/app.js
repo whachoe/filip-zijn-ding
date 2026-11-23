@@ -457,13 +457,6 @@ function callNTimes(func, num, delay) {
     setTimeout(function() { callNTimes(func, num - 1, delay); }, delay);
 }
 
-function generateRandomDate(from, to) {
-  return new Date(
-    from.getTime() +
-      Math.random() * (to.getTime() - from.getTime()),
-  );
-}
-
 function updateTotalRecords() {
   const totalRecordsEl = document.getElementById('total_records');
   if(totalRecordsEl) {

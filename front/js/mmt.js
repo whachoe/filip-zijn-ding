@@ -1634,51 +1634,6 @@
         });
     }
 
-    function create_random_assessment(indicators) { // eslint-disable-line no-unused-vars
-        const curDate = generateRandomDate(new Date(2023, 0, 1), new Date());
-        let assessmentId = create_assessment_id(curDate);
-        let scores = {};
-        indicators.forEach((cat, catX) => {
-            cat.forEach((indicator, indX) => {
-                scoreIdx = "indicator["+catX+"]["+indX+"]";
-                scores[scoreIdx] = Math.floor(Math.random() * indicator.scores.length) + 1;
-            });
-        });
-        
-        let newAssessment = {
-            marketInfo: {},
-            scores: scores,
-            created: curDate.toISOString()
-        };
-
-        // Save the assessment to localstorage
-        localStorage.setItem(assessmentId, JSON.stringify(newAssessment));
-
-        // Now update the assessment list
-        let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
-        if (!assessmentList) assessmentList = [];
-        
-        assessmentList.push(assessmentId);
-        localStorage.setItem("assessment_list", JSON.stringify(makeArrayUnique(assessmentList)));
-    }
-
-    /**
-     * Convert scores object in the form {indicator[cat][ind]: score, ...} to a 2D array with cat and ind dimensions
-     * 
-     */
-    function scores_to_2d_array(scores) {
-        let scoreArray = [];
-        indicators.forEach((cat, catX) => {
-            scoreArray[catX] = [];
-            cat.forEach((indicator, indX) => {
-                let label = "indicator["+catX+"]["+indX+"]";
-                scoreArray[catX][indX] = scores[label];
-            });
-        });
-
-        return scoreArray;
-    }
-
     function scores_to_array(scores) {
         let scoreArray = [];
         indicators.forEach((cat, catX) => {            
@@ -1692,7 +1647,6 @@
 
         return scoreArray;
     }
-
 
     function export_xlsx() {
         let assessmentList = JSON.parse(localStorage.getItem('assessment_list'));
