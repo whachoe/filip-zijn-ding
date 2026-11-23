@@ -2,21 +2,10 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
 const { generateToken, authenticateToken } = require('../middleware/auth');
+const { normalizeEmail, isValidEmail, generateInternalUsername } = require('../global_functions');
 
 const router = express.Router();
 const SALT_ROUNDS = 10;
-
-function normalizeEmail(email) {
-  return String(email || '').trim().toLowerCase();
-}
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function generateInternalUsername() {
-  return `user_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-}
 
 function serializeUser(user) {
   return {

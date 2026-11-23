@@ -449,6 +449,9 @@ test('logs in, saves an assessment draft, syncs it, and keeps synced state after
   expect(syncedAssessment.marketInfo.assessmentSequence).toBe(1);
   expect(syncedAssessment.marketInfo.id).toBeUndefined();
 
+  await page.getByRole('tab', { name: 'Home' }).click();
+  await expect(page.locator('#market-wizard-step-label')).toHaveText('Step 1 of 3');
+
   await page.reload();
   await expect(page.locator('#sync-button')).toHaveText('All Synced');
 

@@ -316,6 +316,15 @@ function renderMarketWizardStep() {
   document.getElementById('market-wizard-progress-fill').style.width = `${((marketWizardStep + 1) / steps.length) * 100}%`;
 }
 
+function resetMarketWizardToStart() {
+  marketWizardTargetAssessmentId = null;
+  marketWizardStep = 0;
+  renderMarketWizardStep();
+  setMarketWizardStatus('');
+}
+
+window.resetMarketWizardToStart = resetMarketWizardToStart;
+
 function validateMarketWizardStep() {
   if (marketWizardStep === 0 && !document.getElementById('market-name').value.trim()) {
     setMarketWizardStatus('Enter a market name to continue.', 'warning');

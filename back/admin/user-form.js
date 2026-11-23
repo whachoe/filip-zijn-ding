@@ -1,56 +1,8 @@
-const API_BASE = window.location.origin;
-
-function getToken() {
-  return localStorage.getItem('jwt_token');
-}
-
-function clearToken() {
-  localStorage.removeItem('jwt_token');
-  localStorage.removeItem('current_user');
-}
-
 function setStatus(message, type) {
   const el = document.getElementById('form-status');
   el.textContent = message;
   el.className = `status ${type || 'info'}`;
 }
-
-async function apiRequest(endpoint, options = {}) {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {})
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.error || `Request failed: ${response.status}`);
-  }
-
-  return data;
-}
-
-const AuthAPI = {
-  async getMe() {
-    return apiRequest('/api/auth/me');
-  },
-  async logout() {
-    try {
-      await apiRequest('/api/auth/logout', { method: 'POST' });
-    } finally {
-      clearToken();
-    }
-  }
-};
 
 const AdminAPI = {
   getUser(userId) {

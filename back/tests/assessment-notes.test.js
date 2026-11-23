@@ -19,6 +19,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     };
     const context = vm.createContext({ document, window: { location: { origin: '' } } });
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/global_functions.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     context[render]({
       id: 'assessment',
@@ -53,6 +54,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     };
     const context = vm.createContext({ document, window: { location: { origin: '' } } });
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/global_functions.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     context[render]({
       id: 'assessment',
@@ -79,6 +81,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     };
     const context = vm.createContext({ document, window: { location: { origin: '' } } });
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/global_functions.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     context[render]({
       id: 'assessment',
@@ -133,6 +136,7 @@ for (const [file, render] of [['admin.js', 'renderAssessmentDetail'], ['assessme
     };
     const context = vm.createContext({ document, window: { location: { origin: '' } } });
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/market-map.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin/global_functions.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../admin', file), 'utf8'), context);
     function renderCoordinates(latitude, longitude) {
       context[render]({ id: 'assessment', data: { scores: {}, marketInfo: { latitude, longitude } } });

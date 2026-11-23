@@ -1046,28 +1046,8 @@
         if (existing && existing.scores) {
             delete existing.scores[fieldName];
         }
-        const assessmentData = {
-            ...(existing || {}),
-            id: currentAssessmentId,
-            marketInfo: existing && existing.marketInfo
-                ? existing.marketInfo
-                : (typeof window.getCurrentMarketInfo === 'function' ? window.getCurrentMarketInfo() : null),
-            scores: existing ? existing.scores : {},
-            progress: {
-                ...(existing && existing.progress ? existing.progress : {}),
-                currentQuestionIndex: currentQuestionIndex,
-                totalQuestions: allQuestions.length,
-                lastUpdated: new Date().toISOString()
-            },
-            created: existing ? existing.created : new Date().toISOString(),
-            synced: false,
-            version: getCurrentQuestionVersion(),
-            mediaAttachments: existing && existing.mediaAttachments ? existing.mediaAttachments : [],
-            notes: existing && existing.notes ? existing.notes : "",
-            questionNotes: existing && existing.questionNotes ? existing.questionNotes : {}
-        };
-        delete assessmentData.contactInfo;
-        localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
+        writeAssessmentProgress(existing, existing ? existing.scores : {},
+            existing && existing.questionNotes ? existing.questionNotes : {});
     }
 
     function saveProgress(updateAssessment) {
@@ -1086,30 +1066,20 @@
             else delete questionNotes[key];
         }
         
-        const assessmentData = {
-            ...(existing || {}),
+        writeAssessmentProgress(existing, allScores, questionNotes, updateAssessment);
+    }
+
+    function writeAssessmentProgress(existing, scores, questionNotes, updateAssessment) {
+        const assessmentData = buildAssessmentProgress(existing, {
             id: currentAssessmentId,
-            marketInfo: existing && existing.marketInfo
-                ? existing.marketInfo
-                : (typeof window.getCurrentMarketInfo === 'function' ? window.getCurrentMarketInfo() : null),
-            scores: allScores,
-            progress: {
-                ...(existing && existing.progress ? existing.progress : {}),
-                currentQuestionIndex: currentQuestionIndex,
-                totalQuestions: allQuestions.length,
-                lastUpdated: new Date().toISOString()
-            },
-            created: existing ? existing.created : new Date().toISOString(),
-            synced: false,
-            version: getCurrentQuestionVersion(),
-            mediaAttachments: existing && existing.mediaAttachments ? existing.mediaAttachments : [],
-            notes: existing && existing.notes ? existing.notes : "",
-            questionNotes: questionNotes
-        };
-        delete assessmentData.contactInfo;
+            scores: scores,
+            questionNotes: questionNotes,
+            currentQuestionIndex: currentQuestionIndex,
+            totalQuestions: allQuestions.length,
+            getCurrentQuestionVersion: getCurrentQuestionVersion
+        });
 
         if (updateAssessment) updateAssessment(assessmentData);
-        
         localStorage.setItem(currentAssessmentId, JSON.stringify(assessmentData));
     }
 

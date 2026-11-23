@@ -238,6 +238,13 @@ async function syncAssessments(assessmentIds) {
       syncStatus.failed++;
     }
   }
+
+  if (results.uploaded.length > 0
+      && typeof window.getIncompleteAssessment === 'function'
+      && !window.getIncompleteAssessment()
+      && typeof window.resetMarketWizardToStart === 'function') {
+    window.resetMarketWizardToStart();
+  }
   
   syncStatus.isSyncing = false;
   await updateSyncStatus();
