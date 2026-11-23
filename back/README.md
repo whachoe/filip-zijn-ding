@@ -56,7 +56,11 @@ Production mode:
 npm start
 ```
 
-Server will run on `http://localhost:3000`
+By default the server listens only on `127.0.0.1` at
+`http://127.0.0.1:3000` (or the configured `PORT`). A reverse proxy can
+still expose it externally; binding to loopback does not restrict the proxy.
+Setting `MMT_TEST_MODE=1` listens on all interfaces for mobile testing. Do not
+enable it on a public server; firewall and router rules determine who can reach it.
 
 ## API Endpoints
 

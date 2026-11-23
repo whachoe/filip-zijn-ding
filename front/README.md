@@ -101,7 +101,9 @@ Each assessment now includes:
    a different interface, check Network settings). On the phone, open
    `http://<mac-ip>:3000/?test=1`, replacing `<mac-ip>` with that address and
    `3000` with `PORT` if configured differently. Allow incoming connections in
-   the Mac firewall if necessary. The backend serves both the app and API;
+   the Mac firewall if necessary. Test mode listens on all interfaces, so
+   firewall and router rules must prevent unwanted access. Without test mode
+   the backend listens only on `127.0.0.1`. The backend serves both the app and API;
    the frontend-only test server cannot sync.
 3. Sign in, complete the market wizard, then tap **Test: fill unanswered and
    jump to end** on the assessment screen. It preserves existing answers and

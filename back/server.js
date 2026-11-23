@@ -16,6 +16,7 @@ const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const TEST_MODE = process.env.MMT_TEST_MODE === '1';
 
 // Middleware
 app.use(cors());
@@ -32,7 +33,7 @@ app.use('/api/assessments', authenticateToken, assessmentRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/media', authenticateToken, mediaRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
-app.use('/api/test-mode', testModeRouter(process.env.MMT_TEST_MODE === '1'));
+app.use('/api/test-mode', testModeRouter(TEST_MODE));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -70,8 +71,8 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`MMT Assessment API running on port ${PORT}`);
+const server = app.listen(PORT, TEST_MODE ? undefined : '127.0.0.1', () => {
+  console.log(`MMT Assessment API listening on ${TEST_MODE ? 'all interfaces' : '127.0.0.1'} port ${server.address().port}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
