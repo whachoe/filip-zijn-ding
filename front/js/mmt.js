@@ -474,6 +474,15 @@
 
 //////////////////////////////// END OF INDICATOR DATA //////////////////////////////
 
+    function escapeHtmlText(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function getCurrentQuestionVersion() {
         const version = parseInt(localStorage.getItem('question_set_version') || '1', 10);
         return isNaN(version) ? 1 : version;
@@ -582,7 +591,7 @@
               <div class="progress-bar-track">
                 <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
               </div>
-              <div id="category-indicator" class="category-indicator">${allQuestions[0].categoryName}</div>
+              <div id="category-indicator" class="category-indicator">${escapeHtmlText(allQuestions[0].categoryName)}</div>
             </div>
 
             <!-- Question Display -->
@@ -615,7 +624,7 @@
         
         let html = `
           <fieldset class="question-fieldset">
-            <h3 class="indicator-label">${question.indicatorName}</h3>
+            <h3 class="indicator-label">${escapeHtmlText(question.indicatorName)}</h3>
             <div class="score-options">`;
         
         question.scores.forEach((score, scoreIdx) => {
@@ -630,7 +639,7 @@
                        class="score-radio">
                 <label for="${inputId}" class="score-label">
                   <span class="score-number">${value}</span>
-                  <span class="score-description">${score}</span>
+                  <span class="score-description">${escapeHtmlText(score)}</span>
                 </label>
               </div>`;
         });
@@ -1164,7 +1173,7 @@
             
             let rowHtml = `
             <tr>
-                <td>${row[0]}</td>
+                <td>${escapeHtmlText(row[0])}</td>
                 <td align="center" class="${calculate_warning_level(current.percentage)}">${current.percentage}% (${current.confidence}%)</td>
                 <td align="center" class="${calculate_warning_level(prev2.percentage)}">${prev2.percentage}% (${prev2.confidence}%)</td>
                 <td align="center" class="${calculate_warning_level(prev1.percentage)}">${prev1.percentage}% (${prev1.confidence}%)</td>
