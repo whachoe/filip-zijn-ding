@@ -171,13 +171,19 @@ function renderUsers(users) {
       <td>${escapeHtml(user.email || '—')}</td>
       <td>${escapeHtml(user.role || 'user')}</td>
       <td class="inline-actions">
-        <button class="secondary" type="button" onclick="editAdminUser(${user.id})">Edit</button>
-        <button class="secondary" type="button" onclick="deleteAdminUser(${user.id}, '${escapeHtml(user.email || '')}')">Delete</button>
+        <button class="secondary" type="button" data-admin-action="edit-user" data-user-id="${escapeHtml(user.id)}">Edit</button>
+        <button class="secondary" type="button" data-admin-action="delete-user" data-user-id="${escapeHtml(user.id)}" data-user-email="${escapeHtml(user.email || '')}">Delete</button>
       </td>
     </tr>`;
   });
   html += '</tbody></table>';
   container.innerHTML = html;
+  container.querySelectorAll('[data-admin-action="edit-user"]').forEach((button) => {
+    button.addEventListener('click', () => editAdminUser(button.dataset.userId));
+  });
+  container.querySelectorAll('[data-admin-action="delete-user"]').forEach((button) => {
+    button.addEventListener('click', () => deleteAdminUser(button.dataset.userId, button.dataset.userEmail));
+  });
 }
 
 function renderQuestionVersions(questionSets) {
@@ -243,7 +249,7 @@ function renderAssessmentSummary(assessments, pagination) {
 
   container.innerHTML = `<p><strong>Total synced assessments:</strong> ${escapeHtml(total)}</p>
     <table class="table"><thead><tr><th>ID</th><th>User</th><th>Version</th><th>Created</th><th>Action</th></tr></thead><tbody>
-    ${assessments.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td><td class="inline-actions"><button class="secondary" type="button" onclick="showAdminAssessment('${escapeHtml(item.id)}')">Show</button><button class="secondary" type="button" onclick="deleteAdminAssessment('${escapeHtml(item.id)}')">Delete</button></td></tr>`).join('')}
+    ${assessments.map((item) => `<tr><td>${escapeHtml(item.id)}</td><td>${escapeHtml(item.email || item.username || 'Unknown')}</td><td>${escapeHtml(item.question_set_version || '—')}</td><td>${escapeHtml(new Date(item.created_at).toLocaleString())}</td><td class="inline-actions"><button class="secondary" type="button" data-admin-action="show-assessment" data-assessment-id="${escapeHtml(item.id)}">Show</button><button class="secondary" type="button" data-admin-action="delete-assessment" data-assessment-id="${escapeHtml(item.id)}">Delete</button></td></tr>`).join('')}
     </tbody></table>
     <div class="pager" aria-label="Assessment pagination">
       <button id="assessment-page-prev" class="secondary" type="button" ${page <= 1 ? 'disabled' : ''}>Previous</button>
@@ -268,6 +274,13 @@ function renderAssessmentSummary(assessments, pagination) {
       event.preventDefault();
       goToAssessmentPage(parseInt(button.dataset.page, 10));
     });
+  });
+
+  container.querySelectorAll('[data-admin-action="show-assessment"]').forEach((button) => {
+    button.addEventListener('click', () => showAdminAssessment(button.dataset.assessmentId));
+  });
+  container.querySelectorAll('[data-admin-action="delete-assessment"]').forEach((button) => {
+    button.addEventListener('click', () => deleteAdminAssessment(button.dataset.assessmentId));
   });
 }
 
