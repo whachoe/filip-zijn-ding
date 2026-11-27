@@ -7,36 +7,46 @@ const db = require('../config/db');
 const router = express.Router();
 
 // Configure multer for file uploads
-const uploadDir = process.env.UPLOAD_DIR || './uploads';
+const uploadDir = path.resolve(process.env.UPLOAD_DIR || './uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+function getUserUploadDirectory(userId) {
+  const numericUserId = Number(userId);
+  if (!Number.isSafeInteger(numericUserId) || numericUserId <= 0) {
+    throw new Error('Invalid authenticated user ID');
+  }
+  return path.join(uploadDir, String(numericUserId));
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // req.user is set by authenticateToken middleware (JWT already verified).
-    // req.body.assessmentId is available here only if the client sends text fields
-    // before the file part in the multipart body (guaranteed by the frontend).
-    const userId = req.user.id;
-    const assessmentId = req.body.assessmentId || 'unknown';
-    const subDir = path.join(uploadDir, `${userId}_${assessmentId}`);
-    fs.mkdirSync(subDir, { recursive: true });
-    cb(null, subDir);
+    try {
+      // Never use multipart fields to form a filesystem path. The directory is
+      // scoped only to the authenticated user, whose ID came from a verified JWT.
+      const userDir = getUserUploadDirectory(req.user.id);
+      fs.mkdirSync(userDir, { recursive: true });
+      cb(null, userDir);
+    } catch (error) {
+      cb(error);
+    }
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext);
-    // destination is already created by the time filename runs
-    const userId = req.user.id;
-    const assessmentId = req.body.assessmentId || 'unknown';
-    const dir = path.join(uploadDir, `${userId}_${assessmentId}`);
-    let name = base + ext;
-    let counter = 1;
-    while (fs.existsSync(path.join(dir, name))) {
-      name = `${base}(${counter})${ext}`;
-      counter++;
+    try {
+      const ext = path.extname(file.originalname);
+      const base = path.basename(file.originalname, ext);
+      const dir = getUserUploadDirectory(req.user.id);
+      let name = base + ext;
+      let counter = 1;
+      while (fs.existsSync(path.join(dir, name))) {
+        name = `${base}(${counter})${ext}`;
+        counter++;
+      }
+      cb(null, name);
+    } catch (error) {
+      cb(error);
     }
-    cb(null, name);
   }
 });
 
